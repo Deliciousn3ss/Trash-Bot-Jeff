@@ -10,28 +10,7 @@ import numpy as np
 import threading
 from time import sleep
 from math import radians, pi
-from array import *
-
-doneScanning = False
-
-def main():
-
-    while(1):
-
-            objectScanner(0)
-
-            
-
-
-
-    return 0
-    
-
-def objectMapping():
-    scan = lidar.polarScan()
-    valids = vector.getValid(scan)
-
-    return valids
+from array import *   
 
 def objectScanner(colortarget):    #Blue = 0, Orange = 1, Green = 2
 
@@ -68,7 +47,7 @@ def objectScanner(colortarget):    #Blue = 0, Orange = 1, Green = 2
     camera.set(4, size_h)                       # Set height of images that will be retrived from camera
 
     aligned = 0
-    while(aligned != 1):
+    while TRUE:
 
         ret, image = camera.read()  # Get image from camera
 
@@ -105,6 +84,7 @@ def objectScanner(colortarget):    #Blue = 0, Orange = 1, Green = 2
                     if abs(e_width) < width_margin:
                         sc.driveOpenLoop(np.array([0.,0.]))             # Stop when centered and aligned
                         print("Aligned! ",w)
+                        aligned = 1
                         #Add an interrupt here once aligned
 
                         #Move forward and dynamically track the object
@@ -127,7 +107,7 @@ def getIp():
     return 0
 
 if __name__ == '__main__':
-    main()                       
+    objectScanner()                       
 
 #blue ball
 #v1_min = 55      # Minimum H value
