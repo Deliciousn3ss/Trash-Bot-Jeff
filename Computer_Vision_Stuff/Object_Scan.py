@@ -47,7 +47,7 @@ def objectScanner(colortarget):    #Blue = 0, Orange = 1, Green = 2
     camera.set(4, size_h)                       # Set height of images that will be retrived from camera
 
     aligned = 0
-    while TRUE:
+    while True:
 
         ret, image = camera.read()  # Get image from camera
 
