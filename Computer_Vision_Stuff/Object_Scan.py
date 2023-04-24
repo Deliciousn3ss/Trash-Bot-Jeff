@@ -15,23 +15,12 @@ from array import *
 doneScanning = False
 
 def main():
-    objects = objectMapping()
-    oldAngle = 0
 
     while(1):
-        for x in range(len(objects[0])):
-            target_ang = objects[x][1] - oldAngle               #From previous object's position to target object
-            thetadot = (target_ang * pi) / 180                  #Convert to radians
-            scanTurn = [[0 , thetadot, 1],[0,0,0]]              #xdot = 0, thetadot = angle, wait time
-                            
-            for motion in enumerate(scanTurn):
-                wheel_speeds = ik.getPdTargets(motion[:2])
-                sc.driveOpenLoop(wheel_speeds)
-                sleep(motion[2])
 
             objectScanner(0)
 
-            oldAngle = objects[x][1]                            #store previous object's position
+            
 
 
 
@@ -116,7 +105,14 @@ def objectScanner(colortarget):    #Blue = 0, Orange = 1, Green = 2
                     if abs(e_width) < width_margin:
                         sc.driveOpenLoop(np.array([0.,0.]))             # Stop when centered and aligned
                         print("Aligned! ",w)
-                        aligned = 1
+                        #Add an interrupt here once aligned
+
+                        #Move forward and dynamically track the object
+        else:
+            #Scuttle Object avoidance function
+
+            #Opt 2: Thread the processes of Scanning and Object avoidance.
+            return
 
 def getIp():
     for interface in ni.interfaces()[1:]:   #For interfaces eth0 and wlan0
