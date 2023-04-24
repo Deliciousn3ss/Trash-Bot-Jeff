@@ -2,7 +2,7 @@ import L1_lidar as lidar
 import L1_motor as motor
 import L2_speed_control as sc
 import L2_inverse_kinematics as ik
-import  as kin
+import L2_kinematics as kin
 import L2_vector as vector
 import netifaces as ni
 import cv2              # For image capture and processing
