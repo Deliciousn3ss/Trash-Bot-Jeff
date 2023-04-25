@@ -1,16 +1,8 @@
-import L1_lidar as lidar
-import L1_motor as motor
 import L2_speed_control as sc
 import L2_inverse_kinematics as ik
 import L2_kinematics as kin
-import L2_vector as vector
-import netifaces as ni
 import cv2              # For image capture and processing
 import numpy as np 
-import threading
-from time import sleep
-from math import radians, pi
-from array import *   
 
 
 def objectTracking(cnts, width):
@@ -38,8 +30,8 @@ def objectTracking(cnts, width):
 
             # If error width is within acceptable margin
             if abs(e_width) < width_margin:
+                print("Aligning...")
                 sc.driveOpenLoop(np.array([0.,0.]))             # Stop when centered and aligned
-                print("Aligned! ",w)
                 continue
 
             fwd_effort = e_width/target_width                   

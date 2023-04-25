@@ -1,15 +1,6 @@
-import L1_lidar as lidar
-import L1_motor as motor
-import L2_speed_control as sc
-import L2_inverse_kinematics as ik
-import L2_kinematics as kin
-import L2_vector as vector
 import netifaces as ni
 import cv2              # For image capture and processing
 import numpy as np 
-import threading
-from time import sleep
-from math import radians, pi
 from array import *   
 
 def objectScanner(colortarget):    #Blue = 0, Orange = 1, Green = 2
@@ -50,7 +41,7 @@ def objectScanner(colortarget):    #Blue = 0, Orange = 1, Green = 2
     while True:
 
         ret, image = camera.read()  # Get image from camera
-
+        
         # Make sure image was grabbed
         if not ret:
             print("Failed to retrieve image!")
@@ -66,10 +57,10 @@ def objectScanner(colortarget):    #Blue = 0, Orange = 1, Green = 2
         mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel)      # Close morph: fills openings w/ dilate followed by erode
         cnts = cv2.findContours(mask.copy(), cv2.RETR_EXTERNAL,
                 cv2.CHAIN_APPROX_SIMPLE)[-2]                        # Find closed shapes in image
+        print("Scanning...")
         
         if len(cnts) and len(cnts) < 3:                             # If more than 0 and less than 3 closed shapes exist
             print(cnts,"objects found!")
-            objectFound = cnts #Breaks loop when at least one object is found
             return cnts, width
         
 
