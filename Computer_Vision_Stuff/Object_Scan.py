@@ -70,8 +70,7 @@ def objectScanner(colortarget):    #Blue = 0, Orange = 1, Green = 2
         if len(cnts) and len(cnts) < 3:                             # If more than 0 and less than 3 closed shapes exist
             print(cnts,"objects found!")
             objectFound = cnts #Breaks loop when at least one object is found
-            return objectFound
-
+            return cnts, width
         
 
 def getIp():

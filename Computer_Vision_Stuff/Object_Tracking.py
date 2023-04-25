@@ -13,18 +13,7 @@ from math import radians, pi
 from array import *   
 
 
-def objectTracking(colortarget):
-    HSV =   [[[55,45,125],[255,255,255]],           
-            [[0,90,195],[255,255,255]],
-            [[45,50,110],[255,255,255]]]
-    
-    #    Camera
-    stream_ip = getIp()
-    if not stream_ip: 
-        print("Failed to get IP for camera stream")
-        exit()
-
-    camera_input = 'http://' + stream_ip + ':8090/?action=stream'   # Address for stream
+def objectTracking(cnts, width):
 
     size_w  = 240   # Resized image width. This is the image width in pixels.
     size_h = 160	# Resized image height. This is the image height in pixels.
@@ -33,49 +22,36 @@ def objectTracking(colortarget):
 
     target_width = 100      # Target pixel width of tracked object
     angle_margin = 0.2      # Radians object can be from image center to be considered "centered"
-    width_margin = 10       # Minimum width error to drive forward/back
-
-    while (objectFound < 1):
-
-        ret, image = camera.read()  # Get image from camera
-
-        # Make sure image was grabbed
-        if not ret:
-            print("Failed to retrieve image!")
-
-        image = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)              # Convert image to HSV
-
-        height, width, channels = image.shape                       # Get shape of image
-
-        thresh = cv2.inRange(image, (HSV[colortarget][0][0], HSV[colortarget][0][1], HSV[colortarget][0][2]),
-        (HSV[colortarget][1][0], HSV[colortarget][1][1], HSV[colortarget][1][2]))   # Find all pixels in color range
-        kernel = np.ones((5,5),np.uint8)                            # Set kernel size
-        mask = cv2.morphologyEx(thresh, cv2.MORPH_OPEN, kernel)     # Open morph: removes noise w/ erode followed by dilate
-        mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel)      # Close morph: fills openings w/ dilate followed by erode
-        cnts = cv2.findContours(mask.copy(), cv2.RETR_EXTERNAL,
-                cv2.CHAIN_APPROX_SIMPLE)[-2]                        # Find closed shapes in image
-
-    try:
-        camera = cv2.VideoCapture(0)    
-    except: pass
-
-    # Try opening camera stream if default method failed
-    if not camera.isOpened():
-        camera = cv2.VideoCapture(camera_input)    
-
-    camera.set(3, size_w)                       # Set width of images that will be retrived from camera
-    camera.set(4, size_h)                       # Set height of images that will be retrived from camera
+    width_margin = 10       # Minimum width error to drive forward/
     
-    return
+    while True:
+        c = max(cnts, key=cv2.contourArea)                      # return the largest target area
+        x,y,w,h = cv2.boundingRect(c)                           # Get bounding rectangle (x,y,w,h) of the largest contour
+        center = (int(x+0.5*w), int(y+0.5*h))                   # defines center of rectangle around the largest target area
+        angle = round(((center[0]/width)-0.5)*fov, 3)           # angle of vector towards target center from camera, where 0 deg is centered
 
-def getIp():
-    for interface in ni.interfaces()[1:]:   #For interfaces eth0 and wlan0
-    
-        try:
-            ip = ni.ifaddresses(interface)[ni.AF_INET][0]['addr']
-            return ip
+        wheel_measured = kin.getPdCurrent()                     # Wheel speed measurements
+
+        # If robot is facing target
+        if abs(angle) < angle_margin:                                 
+            e_width = target_width - w                          # Find error in target width and measured width
+
+            # If error width is within acceptable margin
+            if abs(e_width) < width_margin:
+                sc.driveOpenLoop(np.array([0.,0.]))             # Stop when centered and aligned
+                print("Aligned! ",w)
+                continue
+
+            fwd_effort = e_width/target_width                   
             
-        except KeyError:                    #We get a KeyError if the interface does not have the info
-            continue                        #Try the next interface since this one has no IPv4
+            wheel_speed = ik.getPdTargets(np.array([0.8*fwd_effort, -0.5*angle]))   # Find wheel speeds for approach and heading correction
+            sc.driveClosedLoop(wheel_speed, wheel_measured, 0)  # Drive closed loop
+            print("Angle: ", angle, " | Target L/R: ", *wheel_speed, " | Measured L\R: ", *wheel_measured)
+            continue
+
+        wheel_speed = ik.getPdTargets(np.array([0, -1.1*angle]))    # Find wheel speeds for only turning
+
+        sc.driveClosedLoop(wheel_speed, wheel_measured, 0)          # Drive robot
+        print("Angle: ", angle, " | Target L/R: ", *wheel_speed, " | Measured L\R: ", *wheel_measured)
+
         
-    return 0

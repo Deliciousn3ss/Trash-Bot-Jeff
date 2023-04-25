@@ -11,9 +11,12 @@
 
     -- Object tracking
         -Loop
-            #Locate the object on the camera frame
+            #Open camera
+            #Identify the location of the object in the frame
             #Center the object
-            #Move forward
+            #Move forward until the camera frame is covered by the object
+            #Break loop
+            #If object moves out of frame, rerun Object Scanning
 
 
 3. Once close to the object, use the arm to place into bin
