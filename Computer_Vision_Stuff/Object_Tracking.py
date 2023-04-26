@@ -16,35 +16,35 @@ def objectTracking(cnts, width):
     angle_margin = 0.2      # Radians object can be from image center to be considered "centered"
     width_margin = 10       # Minimum width error to drive forward/
     
-    while True:
-        c = max(cnts, key=cv2.contourArea)                      # return the largest target area
-        x,y,w,h = cv2.boundingRect(c)                           # Get bounding rectangle (x,y,w,h) of the largest contour
-        center = (int(x+0.5*w), int(y+0.5*h))                   # defines center of rectangle around the largest target area
-        angle = round(((center[0]/width)-0.5)*fov, 3)           # angle of vector towards target center from camera, where 0 deg is centered
 
-        wheel_measured = kin.getPdCurrent()                     # Wheel speed measurements
+    c = max(cnts, key=cv2.contourArea)                      # return the largest target area
+    x,y,w,h = cv2.boundingRect(c)                           # Get bounding rectangle (x,y,w,h) of the largest contour
+    center = (int(x+0.5*w), int(y+0.5*h))                   # defines center of rectangle around the largest target area
+    angle = round(((center[0]/width)-0.5)*fov, 3)           # angle of vector towards target center from camera, where 0 deg is centered
 
-        # If robot is facing target
-        if abs(angle) < angle_margin:                                 
-            e_width = target_width - w                          # Find error in target width and measured width
+    wheel_measured = kin.getPdCurrent()                     # Wheel speed measurements
 
-            # If error width is within acceptable margin
-            if abs(e_width) < width_margin:
-                print("Aligning...")
-                sc.driveOpenLoop(np.array([0.,0.]))             # Stop when centered and aligned
-                continue
+    # If robot is facing target
+    if abs(angle) < angle_margin:                                 
+        e_width = target_width - w                          # Find error in target width and measured width
 
-            fwd_effort = e_width/target_width                   
+        # If error width is within acceptable margin
+        if abs(e_width) < width_margin:
+            print("Aligning...")
+            sc.driveOpenLoop(np.array([0.,0.]))             # Stop when centered and aligned
             
-            wheel_speed = ik.getPdTargets(np.array([0.8*fwd_effort, -0.5*angle]))   # Find wheel speeds for approach and heading correction
-            sc.driveClosedLoop(wheel_speed, wheel_measured, 0)  # Drive closed loop
-            print("Angle: ", angle, " | Target L/R: ", *wheel_speed, " | Measured L\R: ", *wheel_measured)
-            continue
 
-        wheel_speed = ik.getPdTargets(np.array([0, -1.1*angle]))    # Find wheel speeds for only turning
-
-        sc.driveClosedLoop(wheel_speed, wheel_measured, 0)          # Drive robot
+        fwd_effort = e_width/target_width                   
+        
+        wheel_speed = ik.getPdTargets(np.array([0.8*fwd_effort, -0.5*angle]))   # Find wheel speeds for approach and heading correction
+        sc.driveClosedLoop(wheel_speed, wheel_measured, 0)  # Drive closed loop
         print("Angle: ", angle, " | Target L/R: ", *wheel_speed, " | Measured L\R: ", *wheel_measured)
+        
+
+    wheel_speed = ik.getPdTargets(np.array([0, -1.1*angle]))    # Find wheel speeds for only turning
+
+    sc.driveClosedLoop(wheel_speed, wheel_measured, 0)          # Drive robot
+    print("Angle: ", angle, " | Target L/R: ", *wheel_speed, " | Measured L\R: ", *wheel_measured)
 
   
 
