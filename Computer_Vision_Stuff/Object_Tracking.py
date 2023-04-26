@@ -36,8 +36,8 @@ def objectTracking(cnts, width):
 
         fwd_effort = e_width/target_width                   
         
-        wheel_speed = ik.getPdTargets(np.array([2.0*fwd_effort, -1.0*angle]))   # Find wheel speeds for approach and heading correction
-        sc.driveClosedLoop(wheel_speed, wheel_measured, 0)  # Drive closed loop
+        wheel_speed = ik.getPdTargets(np.array([1.1*fwd_effort, -0.5*angle]))   # Find wheel speeds for approach and heading correction
+        sc.driveClosedLoop(wheel_speed, wheel_measured, 1)  # Drive closed loop
         print("Angle: ", angle, " | Target L/R: ", *wheel_speed, " | Measured L\R: ", *wheel_measured)
         
 
