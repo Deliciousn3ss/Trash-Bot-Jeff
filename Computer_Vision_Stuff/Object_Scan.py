@@ -1,37 +1,7 @@
-import L1_lidar as lidar
-import L1_motor as motor
-import L2_speed_control as sc
-import L2_inverse_kinematics as ik
-import  as kin
-import L2_vector as vector
 import netifaces as ni
 import cv2              # For image capture and processing
 import numpy as np 
-import threading
-from time import sleep
-from math import radians, pi
-from array import *
-
-doneScanning = False
-
-def main():
-
-    while(1):
-
-            objectScanner(0)
-
-            
-
-
-
-    return 0
-    
-
-def objectMapping():
-    scan = lidar.polarScan()
-    valids = vector.getValid(scan)
-
-    return valids
+from array import *   
 
 def objectScanner(colortarget):    #Blue = 0, Orange = 1, Green = 2
 
@@ -67,11 +37,11 @@ def objectScanner(colortarget):    #Blue = 0, Orange = 1, Green = 2
     camera.set(3, size_w)                       # Set width of images that will be retrived from camera
     camera.set(4, size_h)                       # Set height of images that will be retrived from camera
 
-    aligned = 0
-    while(aligned != 1):
+    objectFound = 0
+    while True:
 
         ret, image = camera.read()  # Get image from camera
-
+        
         # Make sure image was grabbed
         if not ret:
             print("Failed to retrieve image!")
@@ -87,32 +57,12 @@ def objectScanner(colortarget):    #Blue = 0, Orange = 1, Green = 2
         mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel)      # Close morph: fills openings w/ dilate followed by erode
         cnts = cv2.findContours(mask.copy(), cv2.RETR_EXTERNAL,
                 cv2.CHAIN_APPROX_SIMPLE)[-2]                        # Find closed shapes in image
+        print("Scanning...")
         
         if len(cnts) and len(cnts) < 3:                             # If more than 0 and less than 3 closed shapes exist
-
-                c = max(cnts, key=cv2.contourArea)                      # return the largest target area
-                x,y,w,h = cv2.boundingRect(c)                           # Get bounding rectangle (x,y,w,h) of the largest contour
-                center = (int(x+0.5*w), int(y+0.5*h))                   # defines center of rectangle around the largest target area
-                angle = round(((center[0]/width)-0.5)*fov, 3)           # angle of vector towards target center from camera, where 0 deg is centered
-
-                wheel_measured = kin.getPdCurrent()                     # Wheel speed measurements
-
-                # If robot is facing target
-                if abs(angle) < angle_margin:                                 
-                    e_width = target_width - w                          # Find error in target width and measured width
-
-                    # If error width is within acceptable margin
-                    if abs(e_width) < width_margin:
-                        sc.driveOpenLoop(np.array([0.,0.]))             # Stop when centered and aligned
-                        print("Aligned! ",w)
-                        #Add an interrupt here once aligned
-
-                        #Move forward and dynamically track the object
-        else:
-            #Scuttle Object avoidance function
-
-            #Opt 2: Thread the processes of Scanning and Object avoidance.
-            return
+            print(cnts,"objects found!")
+            return cnts, width
+        
 
 def getIp():
     for interface in ni.interfaces()[1:]:   #For interfaces eth0 and wlan0
@@ -126,8 +76,9 @@ def getIp():
         
     return 0
 
+
 if __name__ == '__main__':
-    main()                       
+    objectScanner(colortarget=0)                       
 
 #blue ball
 #v1_min = 55      # Minimum H value

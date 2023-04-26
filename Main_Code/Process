@@ -1,0 +1,24 @@
+1. Run around randomly while scanning with camera
+    #Run both Object avoiding and Object Scan in a thread
+
+    -- Object scanning
+        -Loop
+            #Identifies whether an object is within frame
+            #Loop breaks once at least an object is found
+
+2. Once an object is found, interrupt Object Scan and run Object tracking
+    #interrupt Object scan, run object tracking with oject avoidance in a thread
+
+    -- Object tracking
+        -Loop
+            #Open camera
+            #Identify the location of the object in the frame
+            #Center the object
+            #Move forward until the camera frame is covered by the object
+            #Break loop
+            #If object moves out of frame, rerun Object Scanning
+
+
+3. Once close to the object, use the arm to place into bin
+
+4. Take the object to its designated location
