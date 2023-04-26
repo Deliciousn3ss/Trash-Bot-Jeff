@@ -1,4 +1,4 @@
-import basics.L1_encoder as enc
+import L1_encoder as enc
 import L3_color_tracking as clrtrack
 from array import *
 
