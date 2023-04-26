@@ -3,7 +3,7 @@ from Object_Tracking import objectTracking
 
 while True:
 
-    x,y = objectScanner()
+    x,y = objectScanner(2)
 
     objectTracking(x,y)
 

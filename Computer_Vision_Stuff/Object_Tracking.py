@@ -12,8 +12,8 @@ def objectTracking(cnts, width):
 
     fov = 1         # Camera field of view in rad (estimate)
 
-    target_width = 100      # Target pixel width of tracked object
-    angle_margin = 0.2      # Radians object can be from image center to be considered "centered"
+    target_width = 150      # Target pixel width of tracked object
+    angle_margin = 0.025      # Radians object can be from image center to be considered "centered"
     width_margin = 10       # Minimum width error to drive forward/
     
 
@@ -36,7 +36,7 @@ def objectTracking(cnts, width):
 
         fwd_effort = e_width/target_width                   
         
-        wheel_speed = ik.getPdTargets(np.array([0.8*fwd_effort, -0.5*angle]))   # Find wheel speeds for approach and heading correction
+        wheel_speed = ik.getPdTargets(np.array([2.0*fwd_effort, -1.0*angle]))   # Find wheel speeds for approach and heading correction
         sc.driveClosedLoop(wheel_speed, wheel_measured, 0)  # Drive closed loop
         print("Angle: ", angle, " | Target L/R: ", *wheel_speed, " | Measured L\R: ", *wheel_measured)
         

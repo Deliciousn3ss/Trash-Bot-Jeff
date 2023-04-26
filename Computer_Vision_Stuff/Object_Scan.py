@@ -5,9 +5,9 @@ from array import *
 
 def objectScanner(colortarget):    #Blue = 0, Orange = 1, Green = 2
 
-    HSV =   [[[55,45,125],[255,255,255]],           
-            [[0,90,195],[255,255,255]],
-            [[45,50,110],[255,255,255]]]
+    HSV =   [[[90,135,50],[130,230,235]],           
+            [[5,90,170],[50,255,255]],
+            [[45,50,105],[90,255,250]]]
     
     #    Camera
     stream_ip = getIp()
@@ -60,7 +60,7 @@ def objectScanner(colortarget):    #Blue = 0, Orange = 1, Green = 2
         print("Scanning...")
         
         if len(cnts) and len(cnts) < 3:                             # If more than 0 and less than 3 closed shapes exist
-            print(cnts,"objects found!")
+            print("objects found!")
             return cnts, width
         
 
@@ -81,29 +81,29 @@ if __name__ == '__main__':
     objectScanner(colortarget=0)                       
 
 #blue ball
-#v1_min = 55      # Minimum H value
-#v2_min = 45     # Minimum S value
-#v3_min = 125      # Minimum V value
+#v1_min = 90      # Minimum H value
+#v2_min = 135     # Minimum S value
+#v3_min = 50      # Minimum V value
 
-#v1_max = 255     # Maximum H value
-#v2_max = 255    # Maximum S value
-#v3_max = 255    # Maximum V value
+#v1_max = 130     # Maximum H value
+#v2_max = 230    # Maximum S value
+#v3_max = 235    # Maximum V value
 
 
 #orange ball
-#v1_min = 0      # Minimum H value
+#v1_min = 5      # Minimum H value
 #v2_min = 90     # Minimum S value
-#v3_min = 195      # Minimum V value
+#v3_min = 170      # Minimum V value
 
-#v1_max = 255     # Maximum H value
+#v1_max = 50     # Maximum H value
 #v2_max = 255    # Maximum S value
 #v3_max = 255    # Maximum V value
 
 #green ball
 #v1_min = 45      # Minimum H value
 #v2_min = 50     # Minimum S value
-#v3_min = 110      # Minimum V value
+#v3_min = 105      # Minimum V value
 
-#v1_max = 255     # Maximum H value
+#v1_max = 90     # Maximum H value
 #v2_max = 255    # Maximum S value
-#v3_max = 255    # Maximum V value
+#v3_max = 250    # Maximum V value
