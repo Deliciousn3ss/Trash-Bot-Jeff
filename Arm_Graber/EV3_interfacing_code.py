@@ -13,6 +13,8 @@ sudo python3 -m pip install pybluez
 import bluetooth
 import serial
 import time
+import EV3BT
+
 
 
 # Front claw interfacing
@@ -21,7 +23,7 @@ import time
 try:
     EV3 = serial.Serial('/dev/rfcomm0')
 
-except ValueError:
+except OSError:
     print("EV3 Brick not found! Exiting...")
 
 
@@ -30,19 +32,13 @@ except ValueError:
 print("Waiting for message")
 
 try:
-    while 1:
-        n = EV3.in_waiting()
-        if(n != 0):
-            s = EV3.read(n)
-            for n in s:
-                print("x%02X" % ord(n),)
-            print
-        else:
-            #No data to process
-        time.sleep(0.5)
+    s = EV3BT.encodeMessage(EV3BT.MessageType.Numeric, "abc", "1")
+    print(EV3BT.printMessage(s))
+    EV3.write(s)
+    time.sleep(1)
 
 except KeyboardInterrupt:
-    print("finished testing...")
+    print("aborted testing...")
     print("exiting...")
     pass
 
