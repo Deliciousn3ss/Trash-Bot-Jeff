@@ -15,6 +15,7 @@ import sys
 
 
 print("Importing modules...")
+#import everything from 
 import Computer_Vision_Stuff.Object_Scan as objscan
 import Computer_Vision_Stuff.L2_speed_control
 import Computer_Vision_Stuff.Object_Tracking as objTracker
