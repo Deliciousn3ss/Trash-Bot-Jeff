@@ -96,6 +96,7 @@ def objectTracking(colortarget):
 
                     if(abs(angle) < angle_margin):
                         print("Aligned!")
+                        sc.driveOpenLoop(np.array([0.,0.]))         
                         aligned = 1
                     
                 else:
@@ -141,10 +142,12 @@ def objectTracking(colortarget):
 
                     if(abs(angle) > angle_margin):
                         print("No longer aligned...")
+                        sc.driveOpenLoop(np.array([0.,0.]))         
                         aligned = 0
 
                     if(abs(e_width) < 10):
                         print("Object obtained!")
+                        sc.driveOpenLoop(np.array([0.,0.]))         
                         break
                     
                 else:
