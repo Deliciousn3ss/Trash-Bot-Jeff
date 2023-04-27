@@ -46,7 +46,7 @@ v2_max = 255    # Maximum S value
 v3_max = 255    # Maximum V value
 
 target_width = 100      # Target pixel width of tracked object
-angle_margin = 0.2      # Radians object can be from image center to be considered "centered"
+angle_margin = 0.2      # % error from center of camera --Radians object can be from image center to be considered "centered"
 width_margin = 10       # Minimum width error to drive forward/back
 
 def main():
@@ -90,7 +90,7 @@ def main():
                 c = max(cnts, key=cv2.contourArea)                      # return the largest target area
                 x,y,w,h = cv2.boundingRect(c)                           # Get bounding rectangle (x,y,w,h) of the largest contour
                 center = (int(x+0.5*w), int(y+0.5*h))                   # defines center of rectangle around the largest target area
-                angle = round(((center[0]/width)-0.5)*fov, 3)           # angle of vector towards target center from camera, where 0 deg is centered
+                angle = round(((center[0]/width)-0.5)*fov, 3)           # % away from the center -- angle of vector towards target center from camera, where 0 deg is centered
 
                 wheel_measured = kin.getPdCurrent()                     # Wheel speed measurements
 
