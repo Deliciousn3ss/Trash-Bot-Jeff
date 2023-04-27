@@ -16,14 +16,9 @@ import sys
 
 print("Importing modules...")
 #import everything from Computer_Vision_Stuff
-import Computer_Vision_Stuff.Object_Scan as objscan
-import Computer_Vision_Stuff.Object_Tracking as objTracker
-import Computer_Vision_Stuff.L2_speed_control
-import Computer_Vision_Stuff.L1_motor
-#import Computer_Vision_Stuff
-
-
-import Navigation_Stuff.lidar_driving as navigator
+from Computer_Vision import Camera_Stream as objscan
+from Computer_Vision import Target_Locator as objTracker
+from Obstical_Avoidance import lidar_avoid as navigator
 
 
 # Create Thread for camera detection
@@ -44,8 +39,13 @@ def main():
         threads = []  # create an object for threads
 
         #setup and connect to EV3
-        os.system("sudo rfcomm connect hci0 00:16:53:3F:13:E9")
-        print("Mindstorms EV3:  Online...")
+        try:
+            os.system("sudo rfcomm connect hci0 00:16:53:3F:13:E9")
+            print("Mindstorms EV3:  Online...")
+        except:
+            print("Error! Can't connect to the mindstorms!")
+            print("Exiting...")
+            sys.exit()
 
         t1 = threading.Thread( target=loop_objscan, args=(1,) ) # make 1st thread object
         threads.append(t1) # add this function to the thread object
