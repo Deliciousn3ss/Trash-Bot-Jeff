@@ -71,9 +71,8 @@ def objectScanner():    #Blue = 0, Orange = 1, Green = 2
 
         colortarget = colortarget + 1
 
-    for x in range(object):
-        if(object[x][1] > object[x+1][1]):
-            sortArray.append(object[x])
+    max_val = max(max(row) for row in objects)
+    print(max_val)
 
 
         
