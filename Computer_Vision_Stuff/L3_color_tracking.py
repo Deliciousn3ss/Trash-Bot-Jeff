@@ -9,6 +9,7 @@ import L2_kinematics as kin
 import netifaces as ni
 from time import sleep
 from math import radians, pi
+#from Arm_Graber import EV3_interfacing_code as grabber
 
 # Gets IP to grab MJPG stream
 def getIp():
@@ -34,20 +35,20 @@ camera_input = 'http://' + stream_ip + ':8090/?action=stream'   # Address for st
 size_w  = 240   # Resized image width. This is the image width in pixels.
 size_h = 160	# Resized image height. This is the image height in pixels.
 
-fov = 1         # Camera field of view in rad (estimate)
+fov = 1.197         # Camera field of view in rad (estimate)
 
 #    Color Range, described in HSV
-v1_min = 0      # Minimum H value
-v2_min = 115     # Minimum S value
-v3_min = 0      # Minimum V value
+v1_min = 45      # Minimum H value
+v2_min = 50     # Minimum S value
+v3_min = 105      # Minimum V value
 
-v1_max = 30     # Maximum H value
+v1_max = 90     # Maximum H value
 v2_max = 255    # Maximum S value
-v3_max = 255    # Maximum V value
+v3_max = 250    # Maximum V value
 
-target_width = 100      # Target pixel width of tracked object
-angle_margin = 0.2      # Radians object can be from image center to be considered "centered"
-width_margin = 10       # Minimum width error to drive forward/back
+target_width = 220      # Target pixel width of tracked object
+angle_margin = (5) * pi / 180      #(3 degrees) Radians object can be from image center to be considered "centered"
+width_margin = 20       # Minimum width error to drive forward/back
 
 def main():
     # Try opening camera with default method
@@ -99,9 +100,10 @@ def main():
                     e_width = target_width - w                          # Find error in target width and measured width
 
                     # If error width is within acceptable margin
-                    if abs(e_width) < width_margin:
+                    if abs(e_width) < width_margin :
                         sc.driveOpenLoop(np.array([0.,0.]))             # Stop when centered and aligned
                         print("Aligned! ",w)
+                        sleep(1)
                         continue
 
                     fwd_effort = e_width/target_width                   
@@ -111,7 +113,7 @@ def main():
                     print("Angle: ", angle, " | Target L/R: ", *wheel_speed, " | Measured L\R: ", *wheel_measured)
                     continue
 
-                wheel_speed = ik.getPdTargets(np.array([0, -1.1*angle]))    # Find wheel speeds for only turning
+                wheel_speed = ik.getPdTargets(np.array([0, (-0.8 + 0.4*(w/target_width))*angle]))    # Find wheel speeds for only turning
 
                 sc.driveClosedLoop(wheel_speed, wheel_measured, 0)          # Drive robot
                 print("Angle: ", angle, " | Target L/R: ", *wheel_speed, " | Measured L\R: ", *wheel_measured)

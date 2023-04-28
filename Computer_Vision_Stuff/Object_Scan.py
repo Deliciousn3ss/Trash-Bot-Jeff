@@ -3,7 +3,9 @@ import cv2              # For image capture and processing
 import numpy as np 
 from array import *   
 
-def objectScanner(colortarget):    #Blue = 0, Orange = 1, Green = 2
+def objectScanner():    #Blue = 0, Orange = 1, Green = 2
+
+    colortarget = 0
 
     HSV =   [[[90,135,50],[130,230,235]],           
             [[5,90,170],[50,255,255]],
@@ -37,8 +39,10 @@ def objectScanner(colortarget):    #Blue = 0, Orange = 1, Green = 2
     camera.set(3, size_w)                       # Set width of images that will be retrived from camera
     camera.set(4, size_h)                       # Set height of images that will be retrived from camera
 
-    objectFound = 0
-    while True:
+    objects = []
+    sortArray = []
+
+    while (colortarget < 3):
 
         ret, image = camera.read()  # Get image from camera
         
@@ -57,11 +61,26 @@ def objectScanner(colortarget):    #Blue = 0, Orange = 1, Green = 2
         mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel)      # Close morph: fills openings w/ dilate followed by erode
         cnts = cv2.findContours(mask.copy(), cv2.RETR_EXTERNAL,
                 cv2.CHAIN_APPROX_SIMPLE)[-2]                        # Find closed shapes in image
-        print("Scanning...")
-        
-        if len(cnts) and len(cnts) < 3:                             # If more than 0 and less than 3 closed shapes exist
-            print("objects found!")
-            return cnts, width
+
+        c = max(cnts, key=cv2.contourArea)                      # return the largest target area
+        x,y,w,h = cv2.boundingRect(c)
+
+        e_width = target_width - w
+
+        objects.append(np.array([colortarget,e_width]))
+
+        colortarget = colortarget + 1
+
+    max_val = max(max(row) for row in objects)
+    
+    for row in objects:
+        for element in row:
+            if element == max_val:
+                print(row[0])
+
+    print(objects)
+
+
         
 
 def getIp():
@@ -78,7 +97,7 @@ def getIp():
 
 
 if __name__ == '__main__':
-    objectScanner(colortarget=0)                       
+    objectScanner()                       
 
 #blue ball
 #v1_min = 90      # Minimum H value

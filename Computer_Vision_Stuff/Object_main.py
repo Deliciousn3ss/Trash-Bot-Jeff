@@ -7,6 +7,7 @@ while True:
 
     objectTracking(x,y)
 
+fixed stuff
 
     
 

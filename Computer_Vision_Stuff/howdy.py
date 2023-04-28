@@ -3,6 +3,7 @@ import L3_color_tracking as clrtrack
 from array import *
 
 color = "blue"
+ball = "red"
 
 blueHSV = [[55,45,125],[255,255,255]]
 orangeHSV = [[0,90,195],[255,255,255]]
