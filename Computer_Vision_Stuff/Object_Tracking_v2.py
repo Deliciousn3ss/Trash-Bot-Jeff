@@ -6,6 +6,7 @@ import L2_kinematics as kin
 import netifaces as ni
 from time import sleep
 from math import radians, pi
+from Arm_Graber import EV3_interfacing_code as grabber
 
 # Gets IP to grab MJPG stream
 def getIp():
@@ -33,7 +34,7 @@ size_h = 160	# Resized image height. This is the image height in pixels.
 
 fov = 1         # Camera field of view in rad (estimate)
 
-target_width = 320     # Target pixel width of tracked object
+target_width = 310     # Target pixel width of tracked object
 angle_margin = 0.2      # Radians object can be from image center to be considered "centered"
 width_margin = 10       # Minimum width error to drive forward/back
 
@@ -147,12 +148,38 @@ def objectTracking(colortarget):
 
                     if(abs(e_width) < 10):
                         print("Object obtained!")
-                        sc.driveOpenLoop(np.array([0.,0.]))         
+                        sc.driveOpenLoop(np.array([0,0])) 
+                        #Grab
+                        grabber.sendcommand(2)  #Grab ball
+                        sleep(1)
+                        #Drop ball
+                        ret, image = camera.read()
+
+                        if not ret:
+                            print("Failed to retrieve image...")
+                            break
+
+                        image = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)              # Convert image to HSV
+
+                        height, width, channels = image.shape                       # Get shape of image
+
+                        thresh = cv2.inRange(image, (HSV[colortarget][0][0], HSV[colortarget][0][1], HSV[colortarget][0][2]),
+                    (HSV[colortarget][1][0], HSV[colortarget][1][1], HSV[colortarget][1][2]))   # Find all pixels in color range
+                        kernel = np.ones((5,5),np.uint8)                            # Set kernel size
+                        mask = cv2.morphologyEx(thresh, cv2.MORPH_OPEN, kernel)     # Open morph: removes noise w/ erode followed by dilate
+                        mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel)      # Close morph: fills openings w/ dilate followed by erode
+                        cnts = cv2.findContours(mask.copy(), cv2.RETR_EXTERNAL,
+                                cv2.CHAIN_APPROX_SIMPLE)[-2]                        # Find closed shapes in image
+                        
+                        if(len(cnts) < 1):
+                            print("Object dropped...")
+                            grabber.sendcommand(1)  #Drop claw
+                        #Drop claw
                         break
                     
                 else:
                     print("No targets...")
-                    sc.driveOpenLoop(np.array([0.,0.])) 
+                    sc.driveOpenLoop(np.array([0,0])) 
 
     except KeyboardInterrupt:
         pass

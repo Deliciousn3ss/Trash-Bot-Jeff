@@ -32,7 +32,13 @@ except OSError:
     print("EV3 Brick not found! Exiting...")
     exit()
 
-def sendcommand(command)
+
+#commands:
+# 1 = raise arm
+# 2 = drop arm
+# 3 = raise gate
+# 4 = close gate
+def sendcommand(command):
     s = EV3BT.encodeMessage(EV3BT.MessageType.Numeric, "abc", int(key))
     if(Debug):
         print(EV3BT.printMessage(s))
