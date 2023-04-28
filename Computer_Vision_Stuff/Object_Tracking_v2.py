@@ -33,7 +33,7 @@ size_h = 160	# Resized image height. This is the image height in pixels.
 
 fov = 1         # Camera field of view in rad (estimate)
 
-target_width = 100      # Target pixel width of tracked object
+target_width = 320     # Target pixel width of tracked object
 angle_margin = 0.2      # Radians object can be from image center to be considered "centered"
 width_margin = 10       # Minimum width error to drive forward/back
 
@@ -152,7 +152,7 @@ def objectTracking(colortarget):
                     
                 else:
                     print("No targets...")
-            
+                    sc.driveOpenLoop(np.array([0.,0.])) 
 
     except KeyboardInterrupt:
         pass
@@ -161,3 +161,6 @@ def objectTracking(colortarget):
         print("Exiting object tracking...")
 
     return
+
+if __name__ == '__main__':
+    objectTracking(colortarget=1)  
