@@ -39,8 +39,8 @@ except:
 
 
 #commands:
-# 1 = raise arm
-# 2 = drop arm
+# 1 = drop arm
+# 2 = raise arm
 # 3 = raise gate
 # 4 = close gate
 def sendcommand(command):

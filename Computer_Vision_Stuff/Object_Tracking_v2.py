@@ -34,6 +34,7 @@ if not stream_ip:
 
 camera_input = 'http://' + stream_ip + ':8090/?action=stream'   # Address for stream
 
+#Blue = 0, Orange = 1, Green = 2
 HSV =   [[[90,135,50],[130,230,235]],           
             [[5,90,170],[50,255,255]],
             [[45,50,105],[90,255,250]]]
@@ -107,7 +108,6 @@ def objectTracking(colortarget, distance): #Distance 310 for ball , 100 for home
                     
                 else:
                     print("No targets...")
-                    aligned = 2
 
 
             while(aligned == 1):
@@ -171,37 +171,6 @@ def objectTracking(colortarget, distance): #Distance 310 for ball , 100 for home
                 else:
                     print("No targets...")
                     sc.driveOpenLoop(np.array([0,0]))
-                    aligned = 2
-
-            while(aligned == 2):
-
-                ret, image = camera.read()
-
-                if not ret:
-                    print("Failed to retrieve image...")
-                    break
-
-                image = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)              # Convert image to HSV
-
-                height, width, channels = image.shape                       # Get shape of image
-
-                thresh = cv2.inRange(image, (HSV[colortarget][0][0], HSV[colortarget][0][1], HSV[colortarget][0][2]),
-            (HSV[colortarget][1][0], HSV[colortarget][1][1], HSV[colortarget][1][2]))   # Find all pixels in color range
-                kernel = np.ones((5,5),np.uint8)                            # Set kernel size
-                mask = cv2.morphologyEx(thresh, cv2.MORPH_OPEN, kernel)     # Open morph: removes noise w/ erode followed by dilate
-                mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel)      # Close morph: fills openings w/ dilate followed by erode
-                cnts = cv2.findContours(mask.copy(), cv2.RETR_EXTERNAL,
-                        cv2.CHAIN_APPROX_SIMPLE)[-2]                        # Find closed shapes in image
-                
-                if(len(cnts) > 0):
-                    aligned = 0
-
-                lidardata = avoidance.polarScan(pings)
-                radar = avoidance.Proximity(lidardata)
-                avoidance.avoidance(radar)
-                sleep(0.1)
-                
-                aligned = 0
                     
 
     except KeyboardInterrupt:
@@ -213,6 +182,7 @@ def objectTracking(colortarget, distance): #Distance 310 for ball , 100 for home
     return
 
 if __name__ == '__main__':
-    objectTracking(colortarget=1, distance=290)  
+    objectTracking(colortarget=1, distance=290)
+    #Blue = 0, Orange = 1, Green = 2  
 
 #Pink min[150,20,130] max[205,255,255]
