@@ -10,6 +10,7 @@ import EV3_interfacing_code as grabber
 import L1_lidar_update as avoidance
 import L2_compass_heading as compass
 import L1_motor as m
+import Proximity as prox
 
 pings = int(84)
 
@@ -108,17 +109,17 @@ def objectTracking(colortarget, distance): #Distance 310 for ball , 100 for home
 
                     if(abs(angle) < angle_margin):
                         print("Aligned!")
-                        sc.driveOpenLoop(np.array([0.,0.]))
-                        if(colortarget < 3):         
-                            state = 1
-                        else:
-                            state = 2
+                        sc.driveOpenLoop(np.array([0.,0.]))         
+                        state = 1
+                        
+                            
                     
                 else:
                     print("No targets...")
+                    state = 4
 
 
-            while((state == 1) & (colortarget < 3)): #Forward
+            while(state == 1): #Forward
                 sleep(0.025)
                 ret, image = camera.read()
                 
@@ -159,6 +160,7 @@ def objectTracking(colortarget, distance): #Distance 310 for ball , 100 for home
                         print("No longer aligned...")
                         sc.driveOpenLoop(np.array([0.,0.]))         
                         state = 0
+                        
 
                     print(e_width)
                     if((e_width < 10) & (e_width > -1) & (colortarget < 3) ):
@@ -174,102 +176,118 @@ def objectTracking(colortarget, distance): #Distance 310 for ball , 100 for home
                         print("object dropped")
                         sleep(1)
                         #Drop ball
-                        break
+                        
 
                     if((e_width < 10) & (colortarget > 2)):
                         print("Going to state 2...")
-                        initheading = compass.get_heading()
+                        mag_heading = compass.get_heading()
+                        if(mag_heading < 0):
+                            initheading = 360 + mag_heading
+                        else:
+                            initheading = mag_heading
+                        
                         state = 2
+                        
                     
                     
                 else:
                     print("No targets...")
-                    sc.driveOpenLoop(np.array([0,0]))
+                    state = 4
 
             while(state == 2):
-                print("Turning...")
-                target_heading = initheading + 180
-                # if(target_heading > 180):
-                #     new_target = 360 - target_heading
-                # elif(target_heading < -180):
-                #     new_target = 360 + target_heading
+    
+                # print("Turning...",initheading)
+                
+                # target_heading = initheading + 180
+                # if(target_heading > 360):
+                #     target_heading = target_heading - 360
                 # else:
-                #     new_target = target_heading
+                #     target_heading = target_heading
+                # # if(target_heading > 180):
+                # #     new_target = 360 - target_heading
+                # # elif(target_heading < -180):
+                # #     new_target = 360 + target_heading
+                # # else:
+                # #     new_target = target_heading
 
-                heading_state = 0
-                mag_heading = compass.get_heading()
-                if(mag_heading < 0):
-                    current_heading = 360 + mag_heading
-                else:
-                    current_heading = mag_heading
+                # heading_state = 0
+                # mag_heading = compass.get_heading()
+                # if(mag_heading < 0):
+                #     current_heading = 180 + (mag_heading + 180)
+                # else:
+                #     current_heading = mag_heading
 
-                while(target_heading != current_heading):
-                    mag_heading = compass.get_heading()
-                    if(mag_heading < 0):
-                        current_heading = 360 + mag_heading
-                    else:
-                        current_heading = mag_heading
-
-                    e_heading = (abs(current_heading - target_heading) / 180)  #Error heading
-
-                ret, image = camera.read()
+                # e_heading =  (abs(current_heading - target_heading)) / 180  #Error heading
                 
-                if not ret:
-                    print("Failed to retrieve image...")
-                    break
+                # print("Current angle:", current_heading,"Target angle:", target_heading, "Error", e_heading)
 
-                image = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)              # Convert image to HSV
+                m.sendLeft(-0.8)
+                m.sendRight(0.8)
+                sleep(3.5)
 
-                height, width, channels = image.shape                       # Get shape of image
+                m.sendLeft(0)
+                m.sendRight(0)
+                sleep(0.5)
 
-                thresh = cv2.inRange(image, (HSV[colortarget][0][0], HSV[colortarget][0][1], HSV[colortarget][0][2]),
-            (HSV[colortarget][1][0], HSV[colortarget][1][1], HSV[colortarget][1][2]))   # Find all pixels in color range
-                kernel = np.ones((5,5),np.uint8)                            # Set kernel size
-                mask = cv2.morphologyEx(thresh, cv2.MORPH_OPEN, kernel)     # Open morph: removes noise w/ erode followed by dilate
-                mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel)      # Close morph: fills openings w/ dilate followed by erode
-                cnts = cv2.findContours(mask.copy(), cv2.RETR_EXTERNAL,
-                        cv2.CHAIN_APPROX_SIMPLE)[-2]                        # Find closed shapes in image
-                
-                if len(cnts) and len(cnts) < 3:                             # If more than 0 and less than 3 closed shapes exist
+                m.sendLeft(-0.8)
+                m.sendRight(-0.8)
+                sleep(2)
 
-                    c = max(cnts, key=cv2.contourArea)                      # return the largest target area
-                    x,y,w,h = cv2.boundingRect(c)                           # Get bounding rectangle (x,y,w,h) of the largest contour
-                    center = (int(x+0.5*w), int(y+0.5*h))                   # defines center of rectangle around the largest target area
-                    angle = round(((center[0]/width)-0.5)*fov, 3)           # % away from the center -- angle of vector towards target center from camera, where 0 deg is centered
+                m.sendLeft(0)
+                m.sendRight(0)
+                grabber.sendcommand(3) #Raise gate
+                sleep(1)
+
+                m.sendLeft(0.8)
+                m.sendRight(0.8)
+                sleep(3)
+
+                m.sendLeft(0)
+                m.sendRight(0)
+                grabber.sendcommand(4) #Drop gate
+
+                state = 3
+                break
+            
+            while(state == 3):
+                m.sendLeft(0)
+                m.sendRight(0)
+
+                print("Objects deposited")
+                state = 4
+                # if(e_heading > 0.05):  
                     
-                    e_width = target_width - w                          # Find error in target width and measured width
-                    fwd_effort = e_width/target_width
-                    
-                    wheel_measured = kin.getPdCurrent() 
+                #     wheel_measured = kin.getPdCurrent() 
 
-                    wheel_speed = ik.getPdTargets(np.array([0, -1.1*e_heading]))    # Find wheel speeds for only turning
-                    if(abs(target_heading - current_heading) < 5):
-                        print("State 2: Error heading:", e_heading, "Target heading:", target_heading, "Current heading:", currentheading)
-                        sc.driveClosedLoop(wheel_speed, wheel_measured, 0)  # Drive closed loop
-                        print("Angle: ", current_heading, " | Target L/R: ", *wheel_speed, " | Measured L\R: ", *wheel_measured)
+                #     wheel_speed = ik.getPdTargets(np.array([0, -100*e_heading]))    # Find wheel speeds for only turning
+                #     print("State 2: Error heading:", e_heading, "Target heading:", target_heading, "Current heading:", mag_heading)
+                #     sc.driveClosedLoop(wheel_speed, wheel_measured, 0)  # Drive closed loop
+                #     #print("Angle: ", current_heading, " | Target L/R: ", *wheel_speed, " | Measured L\R: ", *wheel_measured)
 
-                        if((current_heading/target_heading) > 0.95):
-                            headingstate = 1
-                            continue
+                #     if((e_heading) < 0.05):
+                #         m.sendLeft(-0.8)
+                #         m.sendRight(-0.8)
+                #         sleep(1)
+                #         m.sendLeft(0)
+                #         m.sendRight(0)
+                #         grabber.sendcommand(3) #Raise gate
+                #         sleep(1)
+                #         m.sendLeft(0.8)
+                #         m.sendRight(0.8)
+                #         sleep(1)
+                #         m.sendLeft(0)
+                #         m.sendRight(0)
+                #         grabber.sendcommand(4) #Drop gate
+                #         break
 
-                    if(headingstate == 1):
-                        m.sendLeft(-0.8)
-                        m.sendRight(-0.8)
-                        sleep(1)
-                        m.sendLeft(0)
-                        m.sendRight(0)
-                        grabber.sendcommand(3) #Raise gate
-                        sleep(1)
-                        m.sendLeft(0.8)
-                        m.sendRight(0.8)
-                        sleep(1)
-                        m.sendLeft(0)
-                        m.sendRight(0)
-                        grabber.sendcommand(4) #Drop gate
-                        break
+            while(state == 4):
+                prox.Proximity_Scan(int(84))
+                print("State 4...")
+                state = 0
 
 
-                
+
+
                  
 
 
@@ -284,7 +302,7 @@ def objectTracking(colortarget, distance): #Distance 310 for ball , 100 for home
     return
 
 if __name__ == '__main__':
-    objectTracking(colortarget=3, distance=290)
+    objectTracking(colortarget=1, distance=290)
     #Blue = 0, Orange = 1, Green = 2  
 
 #Pink min[150,20,130] max[205,255,255]

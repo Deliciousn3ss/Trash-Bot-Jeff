@@ -17,7 +17,7 @@ import L1_motor as motor
 
 pings = int(84)                         #Amount of Points for lidar to scan
 
-enable = 0 #Enables old condition tree for movement (0 = Debug, 1 = Old Routine, 2 = Default Routine)
+enable = 1 #Enables old condition tree for movement (0 = Debug, 1 = Old Routine, 2 = Default Routine)
 
 np.set_printoptions(suppress=True)                  # Suppress Scientific Notation
 start_angle = -121.0                                # lidar points will range from -135 to 135 degrees, added a 14 degree offset to fix orientation
@@ -156,9 +156,9 @@ def Proximity_Scan(num_points = pings):                       # You may request 
             print("No Object")
 
     #debug displays
-    #print(Front)
-    #print(Left)
-    #print(Right)
+    print(Front)
+    print(Left)
+    print(Right)
         
     return(Area)    #Return Current Surroundings
     
