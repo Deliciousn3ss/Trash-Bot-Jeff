@@ -1,40 +1,56 @@
 # Scan the room in a lawnmower path forever
+# move robot forwards, turn right, move forwards, turn right
+# move robot forwards, turn left, move forwards, turn left
 
 #import LX code
 import L2_speed_control as motor
+import L2_compass_heading as compass
+import L1_lidar as lidar
 import numpy as npy
+import threading
 
-motor.driveClosedLoop(npy.array[0,0])
-enabled = 1
+#setup a class for threading use
+class Room_Scan(threading.Thread):
+    def __init__(self, threadID, name, counter):
+        threading.Thread.__init__(self)
+        self.threadID = threadID
+        self.name = name
+        self.counter = counter
 
-if (enabled == 1):
-    if (Area == 7):     #Surrounded, reverse then turn
-        motor.sendLeft(BKD)
-        motor.sendRight(BKD)
-        time.sleep(0.5)
-        motor.sendLeft(FWD)
-        motor.sendRight(BKD)
-    elif (Area == 1):   #Pivot
-        motor.sendLeft(FWD)
-        motor.sendRight(0.0)
-    elif ((Area == 3) or (Area == 3.2)):   #Rotate Right
-        motor.sendLeft(FWD)
-        motor.sendRight(BKD)
-    elif ((Area == 5) or (Area == 5.4)):        #Rotate Left
-        motor.sendLeft(BKD)
-        motor.sendRight(FWD)
-    elif (Area == 2):   #Keep straight if wall to Left
-        motor.sendLeft(FWD)
-        motor.sendRight(FWD)
-    elif (Area == 4):   #Keep straight if wall to Right
-        motor.sendLeft(FWD)
-        motor.sendRight(FWD)
-    elif ((Area == 2.2) or (Area == 7.2)):   #Close to Left
-        motor.sendLeft(FWD)
-        motor.sendRight(0)
-    elif ((Area == 4.4) or (Area == 7.4)):   #Close to Right
-        motor.sendLeft(0)
-        motor.sendRight(FWD)
-    else:
-        motor.sendLeft(FWD)
-        motor.sendRight(FWD)
+    def run(self):
+        print("Thread: " + self.name + "Started...")
+        try:
+            while(not wall):
+                wall = lidar.polarScan(84)
+                driveforwards()
+            turnRight()
+            driveforwards()
+            turnRight()
+            while(not wall):
+                wall = lidar.polarScan(84)
+                driveforwards()
+            turnLeft()
+            driveforwards()
+            turnLeft()
+
+        except threading.main_thread:
+            #object detected or obstical in the way
+            return 0
+
+#wall distance 1.1m
+
+def driveforwards():
+    motor.driveClosedLoop()
+
+def turnRight():
+    motor.driveClosedLoop()
+
+def turnLeft():
+    motor.driveClosedLoop()
+
+def stopRobit():
+    motor.driveClosedLoop(0,0,0)
+
+
+if __name__ == '__main__':
+    Room_Scan.running()

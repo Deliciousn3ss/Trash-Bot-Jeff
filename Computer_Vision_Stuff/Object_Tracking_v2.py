@@ -9,6 +9,7 @@ from math import radians, pi
 import EV3_interfacing_code as grabber
 import L1_lidar_update as avoidance
 import L2_compass_heading as compass
+import L1_motor as m
 
 
 pings = int(84)
@@ -174,6 +175,7 @@ def objectTracking(colortarget, distance): #Distance 310 for ball , 100 for home
                         break
 
                     if((e_width < 10) & (colortarget > 2)):
+                        initheading = compass.get_heading()
                         state = 2
                     
                     
@@ -182,19 +184,39 @@ def objectTracking(colortarget, distance): #Distance 310 for ball , 100 for home
                     sc.driveOpenLoop(np.array([0,0]))
 
             while(state == 2):
-                initheading = compass.get_heading()
                 print("Turning...")
                 target_heading = initheading + 180
-                while(e_heading > 0)
+                e_heading = 1
+                headingstate = 0
+                while(e_heading > 0):
                     currentheading = compass.get_heading()
-                    e_heading =  (currentheading / target_heading) * (pi / 180) #convert to radians
+                    e_heading = ((currentheading / target_heading))  #convert to radians
                     wheel_measured = kin.getPdCurrent() 
 
                     wheel_speed = ik.getPdTargets(np.array([0, -1.1*e_heading]))    # Find wheel speeds for only turning
-                    
-                    print("State 2: Turning...")
-                    sc.driveClosedLoop(wheel_speed, wheel_measured, 0)  # Drive closed loop
-                    print("Angle: ", currentheading, " | Target L/R: ", *wheel_speed, " | Measured L\R: ", *wheel_measured)
+                    if(abs(target_heading - currentheading) < 5):
+                        print("State 2: Error heading:", e_heading, "Target heading:", target_heading, "Current heading:", currentheading)
+                        sc.driveClosedLoop(wheel_speed, wheel_measured, 0)  # Drive closed loop
+                        print("Angle: ", currentheading, " | Target L/R: ", *wheel_speed, " | Measured L\R: ", *wheel_measured)
+
+                        if((currentheading/target_heading) > 0.95):
+                            headingstate = 1
+                            continue
+
+                    if(headingstate == 1):
+                        m.sendLeft(-0.8)
+                        m.sendRight(-0.8)
+                        sleep(1)
+                        m.sendLeft(0)
+                        m.sendRight(0)
+                        grabber.sendcommand(3) #Raise gate
+                        sleep(1)
+                        m.sendLeft(0.8)
+                        m.sendRight(0.8)
+                        sleep(1)
+                        m.sendLeft(0)
+                        m.sendRight(0)
+                        grabber.sendcommand(4) #Drop gate
 
                 break
 
