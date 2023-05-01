@@ -13,7 +13,7 @@ import pysicktim as lidar                           # required for communication
 import time                                         # for timekeeping
 import math
 import L2_vector as vector
-import L1_log as log
+#import L1_log as log
 import L1_motor as motor
 
 pings = int(84)                                      #Amount of Points for lidar to scan
@@ -21,13 +21,13 @@ pings = int(84)                                      #Amount of Points for lidar
 np.set_printoptions(suppress=True)                  # Suppress Scientific Notation
 start_angle = -121.0                                # lidar points will range from -135 to 135 degrees, added a 14 degree offset to fix orientation
 
-def csv_write(list):
-    list = [str(i) for i in list]
-    #save location "/tmp/excel_data.csv"
-    with open('/home/pi/mxet300_lab/basics/log/lidar_data.csv', 'a') as csvFile:
-        writer = csv.writer(csvFile)
-        writer.writerow(list)
-    csvFile.close()
+# sv_write(list):
+#     list = [str(i) for i in list]
+#     #save location "/tmp/excel_data.csv"
+#     with open('/home/pi/mxet300_lab/basics/log/lidar_data.csv', 'a') as csvFile:
+#         writer = csv.writer(csvFile)
+#         writer.writerow(list)
+#     csvFile.close()
 
 
 def polarScan(num_points = pings):                       # You may request up to 811 points, max.
@@ -123,11 +123,14 @@ def Proximity(lidarData):
     
 def avoidance(radar):   #Checks obstacles angle to determine relative to robot
 
-    enable = 2 #Enables old condition tree for movement (0 = Debug, 1 = Old Routine, 2 = Default Routine)
+    enable = 1 #Enables old condition tree for movement (0 = Debug, 1 = Old Routine, 2 = Default Routine)
     Front = 0
     Left = 0
     Right = 0
     Back = 0
+
+    forward = 0.6
+    reverse = -0.6
     
     #Convert radar point list into array
     Radarray = np.array(radar)
@@ -143,38 +146,38 @@ def avoidance(radar):   #Checks obstacles angle to determine relative to robot
             continue
         
         elif (((angle > 33) & (angle <= 94)) & (Left != 8)): #Check Left Side [angle to -angle] and severity 30 to 80 deg
-            if (dist <= 0.45):
-                Left = 8
-            else:   #(dist <= 0.8):
-                Left = 2
+            # if (dist <= 0.45):
+            #     Left = 8
+            # else:   #(dist <= 0.8):
+            Left = 1 #old val = 2
             continue
         
         elif (((angle < -13) & (angle >= -71)) & (Right != 16)): #Check Right Side [angle to -angle] and severity 
-            if (dist <= 0.45):
-                Right = 16
-            else:   #(dist <= 0.8):
-                Right = 4
+            # if (dist <= 0.45):
+            #     Right = 16
+            # else:   #(dist <= 0.8):
+            Right = 1 #old val = 4
             continue
         else:
             continue
         
     #Sum directional values to form the unique command using binary
-    Area = Front + Left + Right
+    #Area = Front + Left + Right
 
     if (enable == 2):
         if (Area == 0):
             motor.sendLeft(0.8)
             motor.sendRight(0.8)
         elif (Area == 1):     #Object in front                           #Determine which area to face based on amount of open space
-            if (Surroundings(lidarData) == -1):  #More open area to Right
-                motor.sendLeft(0.8)
-                motor.sendRight(-0.8)
-            elif (Surroundings(lidarData) == 1): #More open area to Left
-                motor.sendLeft(-0.8)
-                motor.sendRight(0.8)
-            else:
-                motor.sendLeft(0.0)
-                motor.sendRight(0.0)
+            # if (Surroundings(lidarData) == -1):  #More open area to Right
+            #     motor.sendLeft(0.8)
+            #     motor.sendRight(-0.8)
+            # elif (Surroundings(lidarData) == 1): #More open area to Left
+            motor.sendLeft(-0.8)
+            motor.sendRight(0.8)
+        # else:
+        #     motor.sendLeft(0.0)
+        #     motor.sendRight(0.0)
         elif (Area == 2):           #Object to the Left
             motor.sendLeft(0.8)
             motor.sendRight(0.8)
@@ -189,12 +192,12 @@ def avoidance(radar):   #Checks obstacles angle to determine relative to robot
             motor.sendRight(0.8)
         elif ((Area == 7) or (Area == 25)):   #Surrounded by objects
                             #Determine which area to face based on amount of open space
-            if (Surroundings(lidarData) == -1): #More open area to Right
-                motor.sendLeft(0.8)
-                motor.sendRight(-0.8)
-            elif (Surroundings(lidarData) == 1): #More open area to Left
-                motor.sendLeft(-0.8)
-                motor.sendRight(0.8)
+            # if (Surroundings(lidarData) == -1): #More open area to Right
+            #     motor.sendLeft(0.8)
+            #     motor.sendRight(-0.8)
+            # elif (Surroundings(lidarData) == 1): #More open area to Left
+            motor.sendLeft(-0.8)
+            motor.sendRight(-0.8)
         elif (Area == 8):           #Object is Close to Left
             motor.sendLeft(0.8)
             motor.sendRight(0.0)
@@ -212,29 +215,29 @@ def avoidance(radar):   #Checks obstacles angle to determine relative to robot
     elif (enable == 1):   #Old movement control
             
         if ((Front == 1) & (Left == 1) & (Right == 1)):     #Surrounded, reverse then turn
-            motor.sendLeft(-0.8)
-            motor.sendRight(-0.8)
+            motor.sendLeft(reverse)
+            motor.sendRight(reverse)
             time.sleep(0.5)
-            motor.sendLeft(0.8)
-            motor.sendRight(-0.8)
+            motor.sendLeft(forward)
+            motor.sendRight(reverse)
         elif ((Front == 1) & (Left == 0) & (Right == 0)):   #Stop
             motor.sendLeft(0.4)
             motor.sendRight(0.8)
         elif ((Front == 1) & (Left == 1) & (Right == 0)):   #Rotate Right
-            motor.sendLeft(0.8)
-            motor.sendRight(-0.8)
+            motor.sendLeft(forward)
+            motor.sendRight(reverse)
         elif ((Front == 1) & (Left == 0) & (Right == 1)):   #Rotate Left
-            motor.sendLeft(-0.8)
-            motor.sendRight(0.8)
+            motor.sendLeft(reverse)
+            motor.sendRight(forward)
         elif ((Front == 0) & (Left == 1) & (Right == 0)):   #Keep straight if wall to Left
-            motor.sendLeft(0.8)
-            motor.sendRight(0.8)
+            motor.sendLeft(forward)
+            motor.sendRight(forward)
         elif ((Front == 0) & (Left == 0) & (Right == 1)):   #Keep straight if wall to Right
-            motor.sendLeft(0.8)
-            motor.sendRight(0.8)
+            motor.sendLeft(forward)
+            motor.sendRight(forward)
         else:
-            motor.sendLeft(0.8)
-            motor.sendRight(0.8)
+            motor.sendLeft(forward)
+            motor.sendRight(forward)
 
     #debug displays
     print(Front)

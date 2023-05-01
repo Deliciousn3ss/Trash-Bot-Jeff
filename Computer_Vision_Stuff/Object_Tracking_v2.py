@@ -6,7 +6,12 @@ import L2_kinematics as kin
 import netifaces as ni
 from time import sleep
 from math import radians, pi
-from Arm_Graber import EV3_interfacing_code as grabber
+import EV3_interfacing_code as grabber
+import L1_lidar_update as avoidance
+
+pings = int(84)
+
+#To run this, do sudo python3 
 
 # Gets IP to grab MJPG stream
 def getIp():
@@ -29,20 +34,20 @@ if not stream_ip:
 
 camera_input = 'http://' + stream_ip + ':8090/?action=stream'   # Address for stream
 
-size_w  = 240   # Resized image width. This is the image width in pixels.
-size_h = 160	# Resized image height. This is the image height in pixels.
-
-fov = 1         # Camera field of view in rad (estimate)
-
-target_width = 310     # Target pixel width of tracked object
-angle_margin = 0.2      # Radians object can be from image center to be considered "centered"
-width_margin = 10       # Minimum width error to drive forward/back
-
 HSV =   [[[90,135,50],[130,230,235]],           
             [[5,90,170],[50,255,255]],
             [[45,50,105],[90,255,250]]]
 
-def objectTracking(colortarget):
+def objectTracking(colortarget, distance): #Distance 310 for ball , 100 for home
+
+    size_w  = 240   # Resized image width. This is the image width in pixels.
+    size_h = 160	# Resized image height. This is the image height in pixels.
+
+    fov = 1         # Camera field of view in rad (estimate)
+
+    target_width = distance     # Target pixel width of tracked object
+    angle_margin = 0.2      # Radians object can be from image center to be considered "centered"
+    width_margin = 10       # Minimum width error to drive forward/back
 
 # Try opening camera with default method
     try:
@@ -102,6 +107,7 @@ def objectTracking(colortarget):
                     
                 else:
                     print("No targets...")
+                    aligned = 2
 
 
             while(aligned == 1):
@@ -137,7 +143,7 @@ def objectTracking(colortarget):
                     wheel_measured = kin.getPdCurrent() 
                     
                     print("Moving forward...")
-                    wheel_speed = ik.getPdTargets(np.array([0.8*fwd_effort, -0.5*angle]))   # Find wheel speeds for approach and heading correction
+                    wheel_speed = ik.getPdTargets(np.array([0.5*fwd_effort, -0.5*angle]))   # Find wheel speeds for approach and heading correction
                     sc.driveClosedLoop(wheel_speed, wheel_measured, 0)  # Drive closed loop
                     print("Angle: ", angle, " | Target L/R: ", *wheel_speed, " | Measured L\R: ", *wheel_measured)
 
@@ -146,40 +152,57 @@ def objectTracking(colortarget):
                         sc.driveOpenLoop(np.array([0.,0.]))         
                         aligned = 0
 
+                    print(e_width)
                     if(abs(e_width) < 10):
-                        print("Object obtained!")
+                        print("stopping motor..")
                         sc.driveOpenLoop(np.array([0,0])) 
+                        sleep(0.5)
+                        print("object in claw")
                         #Grab
                         grabber.sendcommand(2)  #Grab ball
+                        print("object obtained")
+                        sleep(3)
+                        grabber.sendcommand(1)
+                        print("object dropped")
                         sleep(1)
                         #Drop ball
-                        ret, image = camera.read()
-
-                        if not ret:
-                            print("Failed to retrieve image...")
-                            break
-
-                        image = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)              # Convert image to HSV
-
-                        height, width, channels = image.shape                       # Get shape of image
-
-                        thresh = cv2.inRange(image, (HSV[colortarget][0][0], HSV[colortarget][0][1], HSV[colortarget][0][2]),
-                    (HSV[colortarget][1][0], HSV[colortarget][1][1], HSV[colortarget][1][2]))   # Find all pixels in color range
-                        kernel = np.ones((5,5),np.uint8)                            # Set kernel size
-                        mask = cv2.morphologyEx(thresh, cv2.MORPH_OPEN, kernel)     # Open morph: removes noise w/ erode followed by dilate
-                        mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel)      # Close morph: fills openings w/ dilate followed by erode
-                        cnts = cv2.findContours(mask.copy(), cv2.RETR_EXTERNAL,
-                                cv2.CHAIN_APPROX_SIMPLE)[-2]                        # Find closed shapes in image
-                        
-                        if(len(cnts) < 1):
-                            print("Object dropped...")
-                            grabber.sendcommand(1)  #Drop claw
-                        #Drop claw
                         break
                     
                 else:
                     print("No targets...")
-                    sc.driveOpenLoop(np.array([0,0])) 
+                    sc.driveOpenLoop(np.array([0,0]))
+                    aligned = 2
+
+            while(aligned == 2):
+
+                ret, image = camera.read()
+
+                if not ret:
+                    print("Failed to retrieve image...")
+                    break
+
+                image = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)              # Convert image to HSV
+
+                height, width, channels = image.shape                       # Get shape of image
+
+                thresh = cv2.inRange(image, (HSV[colortarget][0][0], HSV[colortarget][0][1], HSV[colortarget][0][2]),
+            (HSV[colortarget][1][0], HSV[colortarget][1][1], HSV[colortarget][1][2]))   # Find all pixels in color range
+                kernel = np.ones((5,5),np.uint8)                            # Set kernel size
+                mask = cv2.morphologyEx(thresh, cv2.MORPH_OPEN, kernel)     # Open morph: removes noise w/ erode followed by dilate
+                mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel)      # Close morph: fills openings w/ dilate followed by erode
+                cnts = cv2.findContours(mask.copy(), cv2.RETR_EXTERNAL,
+                        cv2.CHAIN_APPROX_SIMPLE)[-2]                        # Find closed shapes in image
+                
+                if(len(cnts) > 0):
+                    aligned = 0
+
+                lidardata = avoidance.polarScan(pings)
+                radar = avoidance.Proximity(lidardata)
+                avoidance.avoidance(radar)
+                sleep(0.1)
+                
+                aligned = 0
+                    
 
     except KeyboardInterrupt:
         pass
@@ -190,4 +213,6 @@ def objectTracking(colortarget):
     return
 
 if __name__ == '__main__':
-    objectTracking(colortarget=1)  
+    objectTracking(colortarget=1, distance=290)  
+
+#Pink min[150,20,130] max[205,255,255]
