@@ -183,6 +183,30 @@ def objectTracking(colortarget, distance): #Distance 310 for ball , 100 for home
                     sc.driveOpenLoop(np.array([0,0]))
 
             while(state == 2):
+                print("Turning...")
+                target_heading = initheading + 180
+                # if(target_heading > 180):
+                #     new_target = 360 - target_heading
+                # elif(target_heading < -180):
+                #     new_target = 360 + target_heading
+                # else:
+                #     new_target = target_heading
+
+                heading_state = 0
+                mag_heading = compass.get_heading()
+                if(mag_heading < 0):
+                    current_heading = 360 + mag_heading
+                else:
+                    current_heading = mag_heading
+
+                while(target_heading != current_heading):
+                    mag_heading = compass.get_heading()
+                    if(mag_heading < 0):
+                        current_heading = 360 + mag_heading
+                    else:
+                        current_heading = mag_heading
+
+                    e_heading = (abs(current_heading - target_heading) / 180)  #Error heading
 
                 ret, image = camera.read()
                 
@@ -213,20 +237,20 @@ def objectTracking(colortarget, distance): #Distance 310 for ball , 100 for home
                     fwd_effort = e_width/target_width
                     
                     wheel_measured = kin.getPdCurrent() 
-                    
-                    print("State 3: Moving forward", e_width)
-                    wheel_speed = ik.getPdTargets(np.array([0.4*fwd_effort, -0.5*angle]))   # Find wheel speeds for approach and heading correction
-                    sc.driveClosedLoop(wheel_speed, wheel_measured, 0)  # Drive closed loop
-                    print("Angle: ", angle, " | Target L/R: ", *wheel_speed, " | Measured L\R: ", *wheel_measured)
 
-                    if(abs(angle) > angle_margin):
-                        print("No longer aligned...")
-                        sc.driveOpenLoop(np.array([0.,0.]))         
-                        state = 0
+                    wheel_speed = ik.getPdTargets(np.array([0, -1.1*e_heading]))    # Find wheel speeds for only turning
+                    if(abs(target_heading - currentheading) < 5):
+                        print("State 2: Error heading:", e_heading, "Target heading:", target_heading, "Current heading:", currentheading)
+                        sc.driveClosedLoop(wheel_speed, wheel_measured, 0)  # Drive closed loop
+                        print("Angle: ", currentheading, " | Target L/R: ", *wheel_speed, " | Measured L\R: ", *wheel_measured)
 
-                    if((e_width < 5) & (Turncounter < 1) ):
-                        print("Turning...")
-                        sc.driveOpenLoop(np.array([0,-pi]))
+                        if((currentheading/target_heading) > 0.95):
+                            headingstate = 1
+                            continue
+
+                    if(headingstate == 1):
+                        m.sendLeft(-0.8)
+                        m.sendRight(-0.8)
                         sleep(1)
                         sc.driveOpenLoop(np.array([0,0]))
                         Turncounter = Turncounter + 1
