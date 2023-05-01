@@ -8,9 +8,6 @@ from time import sleep
 from math import radians, pi
 import EV3_interfacing_code as grabber
 import L1_lidar_update as avoidance
-import L2_compass_heading as compass
-import L1_motor as m
-
 
 pings = int(84)
 
@@ -54,8 +51,6 @@ def objectTracking(colortarget, distance): #Distance 310 for ball , 100 for home
     angle_margin = 0.2      # Radians object can be from image center to be considered "centered"
     width_margin = 10       # Minimum width error to drive forward/back
 
-    Turncounter = 0
-
 # Try opening camera with default method
     try:
         camera = cv2.VideoCapture(0)    
@@ -72,6 +67,7 @@ def objectTracking(colortarget, distance): #Distance 310 for ball , 100 for home
     try:
         while True:
 
+            Turncounter = 0
             sleep(.05)                                          
         
             while(state == 0): #Aligning
@@ -111,12 +107,16 @@ def objectTracking(colortarget, distance): #Distance 310 for ball , 100 for home
                     if(abs(angle) < angle_margin):
                         print("Aligned!")
                         sc.driveOpenLoop(np.array([0.,0.]))
-                        state = 1
+                        if(colortarget < 3):         
+                            state = 1
+                        else:
+                            state = 2
+                    
                 else:
                     print("No targets...")
 
 
-            while(state == 1): #Forward
+            while((state == 1) & (colortarget < 3)): #Forward
                 sleep(0.025)
                 ret, image = camera.read()
                 
@@ -174,8 +174,7 @@ def objectTracking(colortarget, distance): #Distance 310 for ball , 100 for home
                         #Drop ball
                         break
 
-                    if((e_width < 10) & (colortarget > 2)):
-                        initheading = compass.get_heading()
+                    if(colortarget == 3):
                         state = 2
                     
                     
@@ -184,45 +183,58 @@ def objectTracking(colortarget, distance): #Distance 310 for ball , 100 for home
                     sc.driveOpenLoop(np.array([0,0]))
 
             while(state == 2):
-                print("Turning...")
-                target_heading = initheading + 180
-                e_heading = 1
-                headingstate = 0
-                while(e_heading > 0):
-                    currentheading = compass.get_heading()
-                    e_heading = ((currentheading / target_heading))  #convert to radians
+
+                ret, image = camera.read()
+                
+                if not ret:
+                    print("Failed to retrieve image...")
+                    break
+
+                image = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)              # Convert image to HSV
+
+                height, width, channels = image.shape                       # Get shape of image
+
+                thresh = cv2.inRange(image, (HSV[colortarget][0][0], HSV[colortarget][0][1], HSV[colortarget][0][2]),
+            (HSV[colortarget][1][0], HSV[colortarget][1][1], HSV[colortarget][1][2]))   # Find all pixels in color range
+                kernel = np.ones((5,5),np.uint8)                            # Set kernel size
+                mask = cv2.morphologyEx(thresh, cv2.MORPH_OPEN, kernel)     # Open morph: removes noise w/ erode followed by dilate
+                mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel)      # Close morph: fills openings w/ dilate followed by erode
+                cnts = cv2.findContours(mask.copy(), cv2.RETR_EXTERNAL,
+                        cv2.CHAIN_APPROX_SIMPLE)[-2]                        # Find closed shapes in image
+                
+                if len(cnts) and len(cnts) < 3:                             # If more than 0 and less than 3 closed shapes exist
+
+                    c = max(cnts, key=cv2.contourArea)                      # return the largest target area
+                    x,y,w,h = cv2.boundingRect(c)                           # Get bounding rectangle (x,y,w,h) of the largest contour
+                    center = (int(x+0.5*w), int(y+0.5*h))                   # defines center of rectangle around the largest target area
+                    angle = round(((center[0]/width)-0.5)*fov, 3)           # % away from the center -- angle of vector towards target center from camera, where 0 deg is centered
+                    
+                    e_width = target_width - w                          # Find error in target width and measured width
+                    fwd_effort = e_width/target_width
+                    
                     wheel_measured = kin.getPdCurrent() 
+                    
+                    print("State 3: Moving forward", e_width)
+                    wheel_speed = ik.getPdTargets(np.array([0.4*fwd_effort, -0.5*angle]))   # Find wheel speeds for approach and heading correction
+                    sc.driveClosedLoop(wheel_speed, wheel_measured, 0)  # Drive closed loop
+                    print("Angle: ", angle, " | Target L/R: ", *wheel_speed, " | Measured L\R: ", *wheel_measured)
 
-                    wheel_speed = ik.getPdTargets(np.array([0, -1.1*e_heading]))    # Find wheel speeds for only turning
-                    if(abs(target_heading - currentheading) < 5):
-                        print("State 2: Error heading:", e_heading, "Target heading:", target_heading, "Current heading:", currentheading)
-                        sc.driveClosedLoop(wheel_speed, wheel_measured, 0)  # Drive closed loop
-                        print("Angle: ", currentheading, " | Target L/R: ", *wheel_speed, " | Measured L\R: ", *wheel_measured)
+                    if(abs(angle) > angle_margin):
+                        print("No longer aligned...")
+                        sc.driveOpenLoop(np.array([0.,0.]))         
+                        state = 0
 
-                        if((currentheading/target_heading) > 0.95):
-                            headingstate = 1
-                            continue
-
-                    if(headingstate == 1):
-                        m.sendLeft(-0.8)
-                        m.sendRight(-0.8)
+                    if((e_width < 5) & (Turncounter < 1) ):
+                        print("Turning...")
+                        sc.driveOpenLoop(np.array([0,-pi]))
                         sleep(1)
-                        m.sendLeft(0)
-                        m.sendRight(0)
-                        grabber.sendcommand(3) #Raise gate
-                        sleep(1)
-                        m.sendLeft(0.8)
-                        m.sendRight(0.8)
-                        sleep(1)
-                        m.sendLeft(0)
-                        m.sendRight(0)
-                        grabber.sendcommand(4) #Drop gate
-
-                break
+                        sc.driveOpenLoop(np.array([0,0]))
+                        Turncounter = Turncounter + 1
+                        break
 
 
                 
-                
+                 
 
 
                     
@@ -236,7 +248,7 @@ def objectTracking(colortarget, distance): #Distance 310 for ball , 100 for home
     return
 
 if __name__ == '__main__':
-    objectTracking(colortarget=3, distance=290)
+    objectTracking(colortarget=1, distance=290)
     #Blue = 0, Orange = 1, Green = 2  
 
 #Pink min[150,20,130] max[205,255,255]
