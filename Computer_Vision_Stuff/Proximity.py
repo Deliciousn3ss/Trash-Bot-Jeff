@@ -16,7 +16,7 @@ import L1_motor as motor
 
 pings = int(84)                         #Amount of Points for lidar to scan
 
-enable = 0 #Enables old condition tree for movement (0 = Debug, 1 = Old Routine, 2 = Default Routine)
+enable = 1 #Enables old condition tree for movement (0 = Debug, 1 = Old Routine, 2 = Default Routine)
 
 np.set_printoptions(suppress=True)                  # Suppress Scientific Notation
 start_angle = -121.0                                # lidar points will range from -135 to 135 degrees, added a 14 degree offset to fix orientation
@@ -54,7 +54,7 @@ def Proximity_Scan(num_points = pings):                       # You may request 
     i = 0
     u = 0
     for i in range(pings):  #Check proximity of coordinate values that are within 0.6 meters of scuttle
-        if ((((scan_points[i,0]) <= 0.8) & ((scan_points[i,0]) >= 0.1))):     #If distance is within 0.6 m, flag value and determine coords (((lidarData[i,1]) <= 85) & ((lidarData[i,1]) >= -85))
+        if ((((scan_points[i,0]) <= 0.9) & ((scan_points[i,0]) >= 0.1))):     #If distance is within 0.6 m, flag value and determine coords (((lidarData[i,1]) <= 85) & ((lidarData[i,1]) >= -85))
             
             angle = scan_points[i,1] #[Row, Col]
             dist = scan_points[i,0]  #Distance won't be needed, but can be used to distinguish
@@ -83,15 +83,15 @@ def Proximity_Scan(num_points = pings):                       # You may request 
             Front = 1
             continue
         
-        elif (((angle > 25) and (angle <= 94)) & (Left != 2.2) & (dist <= 0.6)): #Check Left Side [angle to -angle] and severity 30 to 80 deg
-            if ((dist < 0.5) and ((angle > 25) and (angle <= 55))):
+        elif (((angle > 25) and (angle <= 94)) & (Left != 2.2) & (dist <= 0.7)): #Check Left Side [angle to -angle] and severity 30 to 80 deg
+            if (dist < 0.6 and ((angle > 25) and (angle <= 45))):
                 Left = 2.2
             else:
                 Left = 2
             continue
         
-        elif (((angle < -5) and (angle >= -71)) & (Right != 4.4) & (dist <= 0.6)): #Check Right Side [angle to -angle] and severity 
-            if ((dist < 0.5) and ((angle < -5) and (angle >= -35))):
+        elif (((angle < -5) and (angle >= -71)) & (Right != 4.4) & (dist <= 0.7)): #Check Right Side [angle to -angle] and severity 
+            if ((dist < 0.6) and ((angle < -5) and (angle >= -25))):
                 Right = 4.4 
             else:
                 Right = 4
@@ -111,10 +111,10 @@ def Proximity_Scan(num_points = pings):                       # You may request 
         elif ((Front == 1) & (Left == 0) & (Right == 0)):   #Stop
             motor.sendLeft(FWD)
             motor.sendRight(0.0)
-        elif ((Front == 1) & (Left == 2) & (Right == 0)):   #Rotate Right
+        elif ((Front == 1) & ((Left == 2) or (Left == 2.2)) & (Right == 0)):   #Rotate Right
             motor.sendLeft(FWD)
             motor.sendRight(BKD)
-        elif ((Front == 1) & (Left == 0) & (Right == 4)):   #Rotate Left
+        elif ((Front == 1) & (Left == 0) & ((Right == 4) or (Right == 4.4))):   #Rotate Left
             motor.sendLeft(BKD)
             motor.sendRight(FWD)
         elif ((Front == 0) & (Left == 2) & (Right == 0)):   #Keep straight if wall to Left
@@ -123,10 +123,10 @@ def Proximity_Scan(num_points = pings):                       # You may request 
         elif ((Front == 0) & (Left == 0) & (Right == 4)):   #Keep straight if wall to Right
             motor.sendLeft(FWD)
             motor.sendRight(FWD)
-        elif ((Front == 0) & (Left == 2.2) & (Right == 0)):   #Close to Left
+        elif (((Front == 0) & (Left == 2.2) & (Right == 0)) or ((Front == 1) & (Left == 2.2) & (Right == 4))):   #Close to Left
             motor.sendLeft(FWD)
             motor.sendRight(0)
-        elif ((Front == 0) & (Left == 0) & (Right == 4.4)):   #Close to Right
+        elif (((Front == 0) & (Left == 0) & (Right == 4.4)) or ((Front == 1) & (Left == 2) & (Right == 4.4))):   #Close to Right
             motor.sendLeft(0)
             motor.sendRight(FWD)
         else:
