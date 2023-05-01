@@ -186,24 +186,40 @@ def objectTracking(colortarget, distance): #Distance 310 for ball , 100 for home
             while(state == 2):
                 print("Turning...")
                 target_heading = initheading + 180
-                e_heading = 1
-                headingstate = 0
-                while(e_heading > 0):
-                    currentheading = compass.get_heading()
-                    e_heading = ((currentheading / target_heading))  #convert to radians
-                    wheel_measured = kin.getPdCurrent() 
+                # if(target_heading > 180):
+                #     new_target = 360 - target_heading
+                # elif(target_heading < -180):
+                #     new_target = 360 + target_heading
+                # else:
+                #     new_target = target_heading
 
+                heading_state = 0
+                mag_heading = compass.get_heading()
+                if(mag_heading < 0):
+                    current_heading = 360 + mag_heading
+                else:
+                    current_heading = mag_heading
+
+                while(target_heading != current_heading):
+                    mag_heading = compass.get_heading()
+                    if(mag_heading < 0):
+                        current_heading = 360 + mag_heading
+                    else:
+                        current_heading = mag_heading
+
+                    e_heading = (abs(current_heading - target_heading) / 180)  #Error heading
+                    wheel_measured = kin.getPdCurrent() 
                     wheel_speed = ik.getPdTargets(np.array([0, -1.1*e_heading]))    # Find wheel speeds for only turning
-                    if(abs(target_heading - currentheading) < 5):
+                    if(abs(target_heading - current_heading) < 5):
                         print("State 2: Error heading:", e_heading, "Target heading:", target_heading, "Current heading:", currentheading)
                         sc.driveClosedLoop(wheel_speed, wheel_measured, 0)  # Drive closed loop
-                        print("Angle: ", currentheading, " | Target L/R: ", *wheel_speed, " | Measured L\R: ", *wheel_measured)
+                        print("Angle: ", current_heading, " | Target L/R: ", *wheel_speed, " | Measured L\R: ", *wheel_measured)
 
-                        if((currentheading/target_heading) > 0.95):
-                            headingstate = 1
+                        if(e_heading > 0.95):
+                            heading_state = 1
                             continue
 
-                    if(headingstate == 1):
+                    if(heading_state == 1):
                         m.sendLeft(-0.8)
                         m.sendRight(-0.8)
                         sleep(1)
