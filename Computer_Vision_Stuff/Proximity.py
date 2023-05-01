@@ -11,6 +11,7 @@ import numpy as np                                  # for array handling
 import pysicktim as lidar                           # required for communication with TiM561 lidar sensor
 import time                                         # for timekeeping
 import math
+import threading
 import L2_vector as vector
 import L1_motor as motor
 

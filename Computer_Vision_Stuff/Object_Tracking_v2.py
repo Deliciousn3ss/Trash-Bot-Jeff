@@ -182,10 +182,20 @@ def objectTracking(colortarget, distance): #Distance 310 for ball , 100 for home
                     sc.driveOpenLoop(np.array([0,0]))
 
             while(state == 2):
+                initheading = compass.get_heading()
                 print("Turning...")
-                sc.driveOpenLoop(np.array([0,pi]))
-                sleep(1)
-                sc.driveOpenLoop(np.array([0,0]))
+                target_heading = initheading + 180
+                while(e_heading > 0)
+                    currentheading = compass.get_heading()
+                    e_heading =  (currentheading / target_heading) * (pi / 180) #convert to radians
+                    wheel_measured = kin.getPdCurrent() 
+
+                    wheel_speed = ik.getPdTargets(np.array([0, -1.1*e_heading]))    # Find wheel speeds for only turning
+                    
+                    print("State 2: Turning...")
+                    sc.driveClosedLoop(wheel_speed, wheel_measured, 0)  # Drive closed loop
+                    print("Angle: ", currentheading, " | Target L/R: ", *wheel_speed, " | Measured L\R: ", *wheel_measured)
+
                 break
 
 
