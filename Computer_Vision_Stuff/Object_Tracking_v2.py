@@ -8,6 +8,7 @@ from time import sleep
 from math import radians, pi
 import EV3_interfacing_code as grabber
 import L1_lidar_update as avoidance
+import L2_compass_heading as compass
 
 pings = int(84)
 
@@ -37,7 +38,8 @@ camera_input = 'http://' + stream_ip + ':8090/?action=stream'   # Address for st
 #Blue = 0, Orange = 1, Green = 2
 HSV =   [[[90,135,50],[130,230,235]],           
             [[5,90,170],[50,255,255]],
-            [[45,50,105],[90,255,250]]]
+            [[45,50,105],[90,255,250]],
+            [[150,20,130],[205,255,255]]]
 
 def objectTracking(colortarget, distance): #Distance 310 for ball , 100 for home
 
@@ -50,6 +52,8 @@ def objectTracking(colortarget, distance): #Distance 310 for ball , 100 for home
     angle_margin = 0.2      # Radians object can be from image center to be considered "centered"
     width_margin = 10       # Minimum width error to drive forward/back
 
+    Turncounter = 0
+
 # Try opening camera with default method
     try:
         camera = cv2.VideoCapture(0)    
@@ -61,13 +65,14 @@ def objectTracking(colortarget, distance): #Distance 310 for ball , 100 for home
 
     camera.set(3, size_w)                       # Set width of images that will be retrived from camera
     camera.set(4, size_h)                       # Set height of images that will be retrived from camera
-    aligned = 0
+    state = 0
 
     try:
         while True:
+
             sleep(.05)                                          
         
-            while(aligned == 0):
+            while(state == 0): #Aligning
                 ret, image = camera.read()
 
                 if not ret:
@@ -97,23 +102,22 @@ def objectTracking(colortarget, distance): #Distance 310 for ball , 100 for home
 
                     wheel_speed = ik.getPdTargets(np.array([0, -1.1*angle]))    # Find wheel speeds for only turning
                     
-                    print("Aligning...")
+                    print("State 1: Aligning...")
                     sc.driveClosedLoop(wheel_speed, wheel_measured, 0)  # Drive closed loop
                     print("Angle: ", angle, " | Target L/R: ", *wheel_speed, " | Measured L\R: ", *wheel_measured)
 
                     if(abs(angle) < angle_margin):
                         print("Aligned!")
-                        sc.driveOpenLoop(np.array([0.,0.]))         
-                        aligned = 1
-                    
+                        sc.driveOpenLoop(np.array([0.,0.]))
+                        state = 1
                 else:
                     print("No targets...")
 
 
-            while(aligned == 1):
-
+            while(state == 1): #Forward
+                sleep(0.025)
                 ret, image = camera.read()
-
+                
                 if not ret:
                     print("Failed to retrieve image...")
                     break
@@ -142,18 +146,18 @@ def objectTracking(colortarget, distance): #Distance 310 for ball , 100 for home
                     
                     wheel_measured = kin.getPdCurrent() 
                     
-                    print("Moving forward...")
-                    wheel_speed = ik.getPdTargets(np.array([0.5*fwd_effort, -0.5*angle]))   # Find wheel speeds for approach and heading correction
+                    print("State 2: Moving forward...")
+                    wheel_speed = ik.getPdTargets(np.array([0.4*fwd_effort, -0.5*angle]))   # Find wheel speeds for approach and heading correction
                     sc.driveClosedLoop(wheel_speed, wheel_measured, 0)  # Drive closed loop
                     print("Angle: ", angle, " | Target L/R: ", *wheel_speed, " | Measured L\R: ", *wheel_measured)
 
                     if(abs(angle) > angle_margin):
                         print("No longer aligned...")
                         sc.driveOpenLoop(np.array([0.,0.]))         
-                        aligned = 0
+                        state = 0
 
                     print(e_width)
-                    if(abs(e_width) < 10):
+                    if((e_width < 10) & (e_width > -1) & (colortarget < 3) ):
                         print("stopping motor..")
                         sc.driveOpenLoop(np.array([0,0])) 
                         sleep(0.5)
@@ -167,10 +171,27 @@ def objectTracking(colortarget, distance): #Distance 310 for ball , 100 for home
                         sleep(1)
                         #Drop ball
                         break
+
+                    if((e_width < 10) & (colortarget > 2)):
+                        state = 2
+                    
                     
                 else:
                     print("No targets...")
                     sc.driveOpenLoop(np.array([0,0]))
+
+            while(state == 2):
+                print("Turning...")
+                sc.driveOpenLoop(np.array([0,pi]))
+                sleep(1)
+                sc.driveOpenLoop(np.array([0,0]))
+                break
+
+
+                
+                
+
+
                     
 
     except KeyboardInterrupt:
@@ -182,7 +203,7 @@ def objectTracking(colortarget, distance): #Distance 310 for ball , 100 for home
     return
 
 if __name__ == '__main__':
-    objectTracking(colortarget=1, distance=290)
+    objectTracking(colortarget=3, distance=290)
     #Blue = 0, Orange = 1, Green = 2  
 
 #Pink min[150,20,130] max[205,255,255]

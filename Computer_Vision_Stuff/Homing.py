@@ -28,18 +28,19 @@ if not stream_ip:
 
 camera_input = 'http://' + stream_ip + ':8090/?action=stream'   # Address for stream
 
-size_w  = 240   # Resized image width. This is the image width in pixels.
-size_h = 160	# Resized image height. This is the image height in pixels.
 
-fov = 1         # Camera field of view in rad (estimate)
+HSV =   [[[150,20,130],[205,255,255]]]
 
-target_width = 310     # Target pixel width of tracked object
-angle_margin = 0.2      # Radians object can be from image center to be considered "centered"
-width_margin = 10       # Minimum width error to drive forward/back
+def objectTracking(colortarget, distance):
 
-HSV =   [[150,20,130],[205,255,255]]
+    size_w  = 240   # Resized image width. This is the image width in pixels.
+    size_h = 160	# Resized image height. This is the image height in pixels.
 
-def objectTracking(colortarget):
+    fov = 1         # Camera field of view in rad (estimate)
+
+    target_width = distance     # Target pixel width of tracked object
+    angle_margin = 0.2      # Radians object can be from image center to be considered "centered"
+    width_margin = 10       # Minimum width error to drive forward/back
 
 # Try opening camera with default method
     try:
@@ -133,7 +134,7 @@ def objectTracking(colortarget):
                     
                     wheel_measured = kin.getPdCurrent() 
                     
-                    print("Moving forward...")
+                    print("Moving forward: ",e_width)
                     wheel_speed = ik.getPdTargets(np.array([0.8*fwd_effort, -0.5*angle]))   # Find wheel speeds for approach and heading correction
                     sc.driveClosedLoop(wheel_speed, wheel_measured, 0)  # Drive closed loop
                     print("Angle: ", angle, " | Target L/R: ", *wheel_speed, " | Measured L\R: ", *wheel_measured)
@@ -172,4 +173,4 @@ def objectTracking(colortarget):
     return
 
 if __name__ == '__main__':
-    objectTracking(colortarget=1)
+    objectTracking(colortarget=0, distance=290) #distance=290 for ball, distance=100 for home
