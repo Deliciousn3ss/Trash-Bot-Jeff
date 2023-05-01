@@ -176,7 +176,8 @@ def objectTracking(colortarget, distance): #Distance 310 for ball , 100 for home
                         #Drop ball
                         break
 
-                    if(colortarget == 3):
+                    if((e_width < 10) & (colortarget > 2)):
+                        print("Going to state 2...")
                         initheading = compass.get_heading()
                         state = 2
                     
@@ -283,7 +284,7 @@ def objectTracking(colortarget, distance): #Distance 310 for ball , 100 for home
     return
 
 if __name__ == '__main__':
-    objectTracking(colortarget=1, distance=290)
+    objectTracking(colortarget=3, distance=290)
     #Blue = 0, Orange = 1, Green = 2  
 
 #Pink min[150,20,130] max[205,255,255]
