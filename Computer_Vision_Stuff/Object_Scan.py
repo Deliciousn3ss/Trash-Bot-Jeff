@@ -76,6 +76,7 @@ def objectScanner():    #Blue = 0, Orange = 1, Green = 2
                     for element in row:
                         if element == max_val:
                             print(row[0])
+                            return row[0]
         
         objects.clear()
                             

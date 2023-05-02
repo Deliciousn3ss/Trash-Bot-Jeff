@@ -6,7 +6,7 @@ import L2_kinematics as kin
 import netifaces as ni
 from time import sleep
 from math import radians, pi
-#import EV3_interfacing_code as grabber
+import EV3_interfacing_code as grabber
 import L1_lidar_update as avoidance
 import L2_compass_heading as compass
 import L1_motor as m
@@ -44,11 +44,11 @@ HSV =   [[[90,135,50],[130,230,235]],
             [[45,50,105],[90,255,250]],
             [[150,20,130],[205,255,255]]]
 
-def objectTracking(objectcolor, distance): #Distance 310 for ball , 100 for home
+def objectTracking(objectcolor, distance, current_capacity): #Distance 310 for ball , 100 for home
     
     colortarget = objectcolor
     capacity = 0    #Capacity
-    current_capacity = 0
+    #current_capacity = 0
     
     size_w  = 240   # Resized image width. This is the image width in pixels.
     size_h = 160	# Resized image height. This is the image height in pixels.
@@ -110,7 +110,7 @@ def objectTracking(objectcolor, distance): #Distance 310 for ball , 100 for home
                     
                     print("State 1: Aligning...")
                     sc.driveClosedLoop(wheel_speed, wheel_measured, 0)  # Drive closed loop
-                    print("Angle: ", angle, " | Target L/R: ", *wheel_speed, " | Measured L\R: ", *wheel_measured)
+                    #print("Angle: ", angle, " | Target L/R: ", *wheel_speed, " | Measured L\R: ", *wheel_measured)
 
                     if(abs(angle) < angle_margin):
                         print("Aligned!")
@@ -125,7 +125,7 @@ def objectTracking(objectcolor, distance): #Distance 310 for ball , 100 for home
 
 
             while(state == 1): #Forward
-                sleep(0.025)
+                sleep(0.005)
                 ret, image = camera.read()
                 
                 if not ret:
@@ -157,9 +157,9 @@ def objectTracking(objectcolor, distance): #Distance 310 for ball , 100 for home
                     wheel_measured = kin.getPdCurrent() 
                     
                     print("State 2: Moving forward...")
-                    wheel_speed = ik.getPdTargets(np.array([0.4*fwd_effort, -0.5*angle]))   # Find wheel speeds for approach and heading correction
+                    wheel_speed = ik.getPdTargets(np.array([0.35*fwd_effort, -0.4*angle]))   # Find wheel speeds for approach and heading correction
                     sc.driveClosedLoop(wheel_speed, wheel_measured, 0)  # Drive closed loop
-                    print("Angle: ", angle, " | Target L/R: ", *wheel_speed, " | Measured L\R: ", *wheel_measured)
+                    #print("Angle: ", angle, " | Target L/R: ", *wheel_speed, " | Measured L\R: ", *wheel_measured)
 
                     if(abs(angle) > angle_margin):
                         print("No longer aligned...")
@@ -174,15 +174,16 @@ def objectTracking(objectcolor, distance): #Distance 310 for ball , 100 for home
                         sleep(0.5)
                         print("object in claw")
                         #Grab
-                        #grabber.sendcommand(2)  #Grab ball #ReEnable
+                        grabber.sendcommand(2)  #Grab ball #ReEnable
                         print("object obtained")
                         sleep(3)
-                        #grabber.sendcommand(1)             #ReEnable
+                        grabber.sendcommand(1)             #ReEnable
                         print("object dropped")
                         #Add to Cargo
                         current_capacity = current_capacity + 1
                         sleep(1)
                         #Drop ball
+                        return current_capacity
                         
 
                     if((e_width < 10) & (colortarget > 2)):
@@ -203,7 +204,7 @@ def objectTracking(objectcolor, distance): #Distance 310 for ball , 100 for home
                     print("No targets...")
                     state = 4
 
-            while(state == 2):
+            while(state == 2): #Deposit
     
                 # print("Turning...",initheading)
                 
@@ -232,7 +233,7 @@ def objectTracking(objectcolor, distance): #Distance 310 for ball , 100 for home
 
                 m.sendLeft(-0.8)
                 m.sendRight(0.8)
-                sleep(3.5)
+                sleep(3)
 
                 m.sendLeft(0)
                 m.sendRight(0)
@@ -244,7 +245,7 @@ def objectTracking(objectcolor, distance): #Distance 310 for ball , 100 for home
 
                 m.sendLeft(0)
                 m.sendRight(0)
-                #grabber.sendcommand(3) #Raise gate
+                grabber.sendcommand(3) #Raise gate
                 sleep(1)
 
                 m.sendLeft(0.8)
@@ -253,13 +254,14 @@ def objectTracking(objectcolor, distance): #Distance 310 for ball , 100 for home
 
                 m.sendLeft(0)
                 m.sendRight(0)
-                #grabber.sendcommand(4) #Drop gate
+                grabber.sendcommand(4) #Drop gate
 
                 state = 3
                 
                 #Reset Cargo to empty
                 current_capacity = 0
-                colortarget = 2
+                
+                return current_capacity
                 
                 break
             
@@ -272,6 +274,8 @@ def objectTracking(objectcolor, distance): #Distance 310 for ball , 100 for home
 
                 print("Objects deposited")
                 state = 4
+                
+                
                 
                 if(current_capacity == 2):
                     colortarget = 3
@@ -309,6 +313,8 @@ def objectTracking(objectcolor, distance): #Distance 310 for ball , 100 for home
                     #Check capacity
                     #Search for home
                 state = 0
+            
+            
 
 
 

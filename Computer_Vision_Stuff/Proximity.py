@@ -100,10 +100,11 @@ def Proximity_Scan(num_points = pings):                       # You may request 
         
     #Sum directional values to form the unique command using binary
     Area = Front + Left + Right
+    Area = round(Area,1)
        
     if (enable == 1):   #Old movement control
             
-        if ((Front == 1) & (Left == 2) & (Right == 4)):     #Surrounded, reverse then turn
+        if ((Area == 7) or (Area == 7.6)):     #Surrounded, reverse then turn
             motor.sendLeft(BKD)
             motor.sendRight(BKD)
             time.sleep(0.5)
@@ -112,21 +113,18 @@ def Proximity_Scan(num_points = pings):                       # You may request 
         elif ((Front == 1) & (Left == 0) & (Right == 0)):   #Stop
             motor.sendLeft(FWD)
             motor.sendRight(0.0)
-            time.sleep(1)
         elif ((Front == 1) & ((Left == 2) or (Left == 2.2)) & (Right == 0)):   #Rotate Right
             motor.sendLeft(1.0)
             motor.sendRight(0)
-            time.sleep(1)
         elif ((Front == 1) & (Left == 0) & ((Right == 4) or (Right == 4.4))):   #Rotate Left
             motor.sendLeft(0)
             motor.sendRight(1.0)
-            time.sleep(1)
         elif ((Front == 0) & (Left == 2) & (Right == 0)):   #Keep straight if wall to Left
-            motor.sendLeft(FWD)
-            motor.sendRight(FWD)
+            motor.sendLeft(1.0)
+            motor.sendRight(0.6)
         elif ((Front == 0) & (Left == 0) & (Right == 4)):   #Keep straight if wall to Right
-            motor.sendLeft(FWD)
-            motor.sendRight(FWD)
+            motor.sendLeft(0.6)
+            motor.sendRight(1.0)
         elif (((Front == 0) & (Left == 2.2) & (Right == 0)) or ((Front == 1) & (Left == 2.2) & (Right == 4))):   #Close to Left
             motor.sendLeft(1.0)
             motor.sendRight(0)
@@ -159,9 +157,10 @@ def Proximity_Scan(num_points = pings):                       # You may request 
             print("No Object")
 
     #debug displays
-    print(Front)
-    print(Left)
-    print(Right)
+    #print(Front)
+    #print(Left)
+    #print(Right)
+    print(Area)
         
     return(Area)    #Return Current Surroundings
     
