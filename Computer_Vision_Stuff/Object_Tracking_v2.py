@@ -6,13 +6,14 @@ import L2_kinematics as kin
 import netifaces as ni
 from time import sleep
 from math import radians, pi
-import EV3_interfacing_code as grabber
+#import EV3_interfacing_code as grabber
 import L1_lidar_update as avoidance
 import L2_compass_heading as compass
 import L1_motor as m
 import Proximity as prox
 
 pings = int(84)
+
 
 #To run this, do sudo python3 
 
@@ -43,8 +44,12 @@ HSV =   [[[90,135,50],[130,230,235]],
             [[45,50,105],[90,255,250]],
             [[150,20,130],[205,255,255]]]
 
-def objectTracking(colortarget, distance): #Distance 310 for ball , 100 for home
-
+def objectTracking(objectcolor, distance): #Distance 310 for ball , 100 for home
+    
+    colortarget = objectcolor
+    capacity = 0    #Capacity
+    current_capacity = 0
+    
     size_w  = 240   # Resized image width. This is the image width in pixels.
     size_h = 160	# Resized image height. This is the image height in pixels.
 
@@ -169,11 +174,13 @@ def objectTracking(colortarget, distance): #Distance 310 for ball , 100 for home
                         sleep(0.5)
                         print("object in claw")
                         #Grab
-                        grabber.sendcommand(2)  #Grab ball
+                        #grabber.sendcommand(2)  #Grab ball #ReEnable
                         print("object obtained")
                         sleep(3)
-                        grabber.sendcommand(1)
+                        #grabber.sendcommand(1)             #ReEnable
                         print("object dropped")
+                        #Add to Cargo
+                        current_capacity = current_capacity + 1
                         sleep(1)
                         #Drop ball
                         
@@ -187,6 +194,8 @@ def objectTracking(colortarget, distance): #Distance 310 for ball , 100 for home
                             initheading = mag_heading
                         
                         state = 2
+                    
+                        print("Going home")
                         
                     
                     
@@ -235,7 +244,7 @@ def objectTracking(colortarget, distance): #Distance 310 for ball , 100 for home
 
                 m.sendLeft(0)
                 m.sendRight(0)
-                grabber.sendcommand(3) #Raise gate
+                #grabber.sendcommand(3) #Raise gate
                 sleep(1)
 
                 m.sendLeft(0.8)
@@ -244,17 +253,29 @@ def objectTracking(colortarget, distance): #Distance 310 for ball , 100 for home
 
                 m.sendLeft(0)
                 m.sendRight(0)
-                grabber.sendcommand(4) #Drop gate
+                #grabber.sendcommand(4) #Drop gate
 
                 state = 3
+                
+                #Reset Cargo to empty
+                current_capacity = 0
+                colortarget = 2
+                
                 break
             
-            while(state == 3):
+            while(state == 3): #Home code
                 m.sendLeft(0)
                 m.sendRight(0)
+                
+                #Change Color priority
+                print("Looking for next color")
 
                 print("Objects deposited")
                 state = 4
+                
+                if(current_capacity == 2):
+                    colortarget = 3
+                    state = 4
                 # if(e_heading > 0.05):  
                     
                 #     wheel_measured = kin.getPdCurrent() 
@@ -282,7 +303,11 @@ def objectTracking(colortarget, distance): #Distance 310 for ball , 100 for home
 
             while(state == 4):
                 prox.Proximity_Scan(int(84))
-                print("State 4...")
+                if(current_capacity == 2):
+                    colortarget = 3
+                print("State 4: Object count:", current_capacity, "Current target", colortarget)
+                    #Check capacity
+                    #Search for home
                 state = 0
 
 
@@ -302,7 +327,7 @@ def objectTracking(colortarget, distance): #Distance 310 for ball , 100 for home
     return
 
 if __name__ == '__main__':
-    objectTracking(colortarget=1, distance=290)
+    objectTracking(objectcolor=2, distance=290)
     #Blue = 0, Orange = 1, Green = 2  
 
 #Pink min[150,20,130] max[205,255,255]

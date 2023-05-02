@@ -112,12 +112,15 @@ def Proximity_Scan(num_points = pings):                       # You may request 
         elif ((Front == 1) & (Left == 0) & (Right == 0)):   #Stop
             motor.sendLeft(FWD)
             motor.sendRight(0.0)
+            time.sleep(1)
         elif ((Front == 1) & ((Left == 2) or (Left == 2.2)) & (Right == 0)):   #Rotate Right
-            motor.sendLeft(FWD)
-            motor.sendRight(BKD)
+            motor.sendLeft(1.0)
+            motor.sendRight(0)
+            time.sleep(1)
         elif ((Front == 1) & (Left == 0) & ((Right == 4) or (Right == 4.4))):   #Rotate Left
-            motor.sendLeft(BKD)
-            motor.sendRight(FWD)
+            motor.sendLeft(0)
+            motor.sendRight(1.0)
+            time.sleep(1)
         elif ((Front == 0) & (Left == 2) & (Right == 0)):   #Keep straight if wall to Left
             motor.sendLeft(FWD)
             motor.sendRight(FWD)
@@ -125,11 +128,11 @@ def Proximity_Scan(num_points = pings):                       # You may request 
             motor.sendLeft(FWD)
             motor.sendRight(FWD)
         elif (((Front == 0) & (Left == 2.2) & (Right == 0)) or ((Front == 1) & (Left == 2.2) & (Right == 4))):   #Close to Left
-            motor.sendLeft(FWD)
+            motor.sendLeft(1.0)
             motor.sendRight(0)
         elif (((Front == 0) & (Left == 0) & (Right == 4.4)) or ((Front == 1) & (Left == 2) & (Right == 4.4))):   #Close to Right
             motor.sendLeft(0)
-            motor.sendRight(FWD)
+            motor.sendRight(1.0)
         else:
             motor.sendLeft(FWD)
             motor.sendRight(FWD)
