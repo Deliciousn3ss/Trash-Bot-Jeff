@@ -313,16 +313,6 @@ def objectTracking(objectcolor, distance, current_capacity): #Distance 310 for b
                     #Check capacity
                     #Search for home
                 state = 0
-            
-            
-
-
-
-
-                 
-
-
-                    
 
     except KeyboardInterrupt:
         pass
